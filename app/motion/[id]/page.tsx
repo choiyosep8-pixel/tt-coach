@@ -5,7 +5,20 @@ import { MotionStatusBadge } from '@/components/motion-status-badge';
 import { deleteAnalysis } from '../actions';
 import { CopyCommand } from './copy-command';
 import { youtubeEmbedUrl } from '@/lib/youtube';
+import { formatSec } from '@/lib/time';
 import type { MotionAnalysis } from '@/lib/types';
+
+const POSITION_LABEL: Record<string, string> = {
+  solo: '단독',
+  left: '왼쪽',
+  right: '오른쪽',
+  near: '카메라 쪽',
+  far: '반대편',
+};
+const HAND_LABEL: Record<string, string> = {
+  right: '오른손',
+  left: '왼손',
+};
 
 export default async function MotionDetailPage({
   params,
@@ -66,8 +79,28 @@ export default async function MotionDetailPage({
 
       {/* 영상 비교 — 임베드 2장 */}
       <section className="grid sm:grid-cols-2 gap-3 mb-6">
-        <VideoBlock label="Reference" url={a.reference_url} embed={refEmbed} accent="#888892" />
-        <VideoBlock label="Mine" url={a.my_video_url} embed={mineEmbed} accent="#a3e635" />
+        <VideoBlock
+          label="Reference"
+          subject={a.reference_subject}
+          position={a.reference_position}
+          hand={a.reference_hand}
+          startSec={a.reference_start_sec}
+          endSec={a.reference_end_sec}
+          url={a.reference_url}
+          embed={refEmbed}
+          accent="#888892"
+        />
+        <VideoBlock
+          label="Mine"
+          subject={a.my_subject}
+          position={a.my_position}
+          hand={a.my_hand}
+          startSec={a.my_start_sec}
+          endSec={a.my_end_sec}
+          url={a.my_video_url}
+          embed={mineEmbed}
+          accent="#a3e635"
+        />
       </section>
 
       {a.focus && (
@@ -111,23 +144,67 @@ export default async function MotionDetailPage({
 
 function VideoBlock({
   label,
+  subject,
+  position,
+  hand,
+  startSec,
+  endSec,
   url,
   embed,
   accent,
 }: {
   label: string;
+  subject?: string | null;
+  position?: string | null;
+  hand?: string | null;
+  startSec?: number | null;
+  endSec?: number | null;
   url: string | null;
   embed: string | null;
   accent: string;
 }) {
+  const meta = [
+    position ? POSITION_LABEL[position] ?? position : null,
+    hand ? HAND_LABEL[hand] ?? hand : null,
+  ].filter(Boolean);
+  const range =
+    startSec != null || endSec != null
+      ? `${formatSec(startSec) || '0:00'} → ${formatSec(endSec) || 'end'}`
+      : null;
   return (
     <div>
       <div
-        className="text-[10px] uppercase tracking-[0.25em] mb-2 font-bold"
+        className="text-[10px] uppercase tracking-[0.25em] mb-1 font-bold"
         style={{ color: accent }}
       >
         {label}
       </div>
+      {(meta.length > 0 || subject || range) && (
+        <div className="mb-2 text-[11px] text-stone-100 space-y-0.5">
+          {meta.length > 0 && (
+            <div className="flex gap-1.5 flex-wrap">
+              {meta.map((m) => (
+                <span
+                  key={m}
+                  className="px-1.5 py-0.5 rounded text-[10px] uppercase tracking-[0.15em] font-semibold"
+                  style={{ color: accent, backgroundColor: `${accent}20` }}
+                >
+                  {m}
+                </span>
+              ))}
+            </div>
+          )}
+          {subject && (
+            <div className="text-[11px] text-stone-100 leading-snug">
+              <span className="text-[#5a5a62]">→ </span>
+              {subject}
+            </div>
+          )}
+          {range && (
+            <div className="font-mono text-[11px] text-[#888892]">⏱ {range}</div>
+          )}
+        </div>
+      )}
       {embed ? (
         <div className="aspect-video bg-black rounded-lg overflow-hidden border border-[#2a2a30]">
           <iframe

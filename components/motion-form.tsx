@@ -1,10 +1,11 @@
 'use client';
 import { createAnalysis } from '@/app/motion/actions';
 import { SubmitButton } from './submit-button';
+import { SubjectFieldset } from './subject-fieldset';
 
 export function MotionForm() {
   return (
-    <form action={createAnalysis} className="bg-[#14141a] border border-[#2a2a30] rounded-xl p-5 space-y-4">
+    <form action={createAnalysis} className="bg-[#14141a] border border-[#2a2a30] rounded-xl p-5 space-y-5">
       <h2 className="text-[10px] uppercase tracking-[0.25em] text-[#888892]">+ New Analysis</h2>
 
       <input
@@ -15,11 +16,12 @@ export function MotionForm() {
         className="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a30] rounded text-sm text-stone-100 placeholder:text-[#5a5a62] focus:outline-none focus:border-[#a3e635]"
       />
 
-      <div className="grid sm:grid-cols-2 gap-3">
-        <div>
-          <label className="text-[10px] uppercase tracking-[0.25em] text-[#888892] block mb-1.5">
-            Reference — 롤모델 유튜브 URL
-          </label>
+      <div className="grid lg:grid-cols-2 gap-5">
+        {/* Reference */}
+        <fieldset className="space-y-3 border border-[#2a2a30] rounded-lg p-4">
+          <legend className="px-2 text-[10px] uppercase tracking-[0.25em] text-[#888892]">
+            Reference · 닮고 싶은 사람
+          </legend>
           <input
             name="reference_url"
             type="url"
@@ -27,11 +29,14 @@ export function MotionForm() {
             placeholder="https://youtu.be/..."
             className="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a30] rounded text-sm text-stone-100 placeholder:text-[#5a5a62] focus:outline-none focus:border-[#a3e635]"
           />
-        </div>
-        <div>
-          <label className="text-[10px] uppercase tracking-[0.25em] text-[#a3e635] block mb-1.5">
-            Mine — 내 유튜브 URL
-          </label>
+          <SubjectFieldset prefix="reference" variant="reference" />
+        </fieldset>
+
+        {/* Mine */}
+        <fieldset className="space-y-3 border border-[#a3e635]/40 rounded-lg p-4 bg-[#a3e635]/[0.02]">
+          <legend className="px-2 text-[10px] uppercase tracking-[0.25em] text-[#a3e635]">
+            Mine · 나
+          </legend>
           <input
             name="my_video_url"
             type="url"
@@ -39,7 +44,8 @@ export function MotionForm() {
             placeholder="https://youtu.be/..."
             className="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a30] rounded text-sm text-stone-100 placeholder:text-[#5a5a62] focus:outline-none focus:border-[#a3e635]"
           />
-        </div>
+          <SubjectFieldset prefix="my" variant="mine" required />
+        </fieldset>
       </div>
 
       <textarea
@@ -56,8 +62,8 @@ export function MotionForm() {
         fullWidth
       />
 
-      <p className="text-[10px] uppercase tracking-[0.2em] text-[#5a5a62] text-center">
-        Both videos must be on YouTube. CLI will fetch &amp; compare.
+      <p className="text-[10px] uppercase tracking-[0.2em] text-[#5a5a62] text-center leading-relaxed">
+        탁구는 둘이 치니까 — 본인 위치·그립·구간을 정확히 박을수록 분석 정확도 ↑
       </p>
     </form>
   );
