@@ -1,111 +1,245 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import type { OpponentType } from '@/lib/types';
-import { typeCode } from '@/lib/type-codes';
+import { saveMonthlyGoal, savePlayerProfile } from './goal-actions';
+import type { MonthlyGoal, PlayerProfile } from '@/lib/types';
+
+function thisMonth(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
 
 export default async function HomePage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
 
-  const { data: types } = await supabase
-    .from('opponent_types')
-    .select('*')
-    .order('sort_order');
+  const ym = thisMonth();
 
-  const { data: strats } = await supabase
-    .from('counter_strategies')
-    .select('type_id');
+  const [
+    { data: goal },
+    { data: profile },
+    { data: masterySum },
+    { count: sessionCount },
+  ] = await Promise.all([
+    supabase
+      .from('monthly_goals')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('year_month', ym)
+      .maybeSingle<MonthlyGoal>(),
+    supabase
+      .from('player_profile')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle<PlayerProfile>(),
+    supabase.from('type_mastery').select('mastery_percent').eq('user_id', user.id),
+    supabase
+      .from('sessions')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .gte('session_date', `${ym}-01`),
+  ]);
 
-  const { data: gameSessions } = await supabase
-    .from('sessions')
-    .select('opponent_type_id')
-    .not('opponent_type_id', 'is', null);
-
-  const noteCount = (strats ?? []).reduce<Record<string, number>>((acc, r) => {
-    acc[r.type_id] = (acc[r.type_id] ?? 0) + 1;
-    return acc;
-  }, {});
-  const gameCount = (gameSessions ?? []).reduce<Record<string, number>>((acc, r) => {
-    if (!r.opponent_type_id) return acc;
-    acc[r.opponent_type_id] = (acc[r.opponent_type_id] ?? 0) + 1;
-    return acc;
-  }, {});
-
-  const phone = user?.user_metadata?.display_name ?? user?.email ?? '';
+  const avgMastery =
+    masterySum && masterySum.length > 0
+      ? Math.round(masterySum.reduce((s, r) => s + (r.mastery_percent ?? 0), 0) / 8)
+      : 0;
+  const phone = user.user_metadata?.display_name ?? user.email ?? '';
 
   return (
     <div>
-      {/* 헤로 */}
-      <section className="mb-10 pt-3">
-        <div className="text-[11px] tracking-[0.3em] text-[#5a5a62] uppercase">
-          Opponent Catalog
+      {/* 이번달 — 가장 큰 자리 */}
+      <section className="pt-2 mb-8">
+        <div className="text-[10px] uppercase tracking-[0.3em] text-[#5a5a62]">
+          {ym} · Monthly Plan
         </div>
-        <h1 className="text-[28px] font-bold mt-3 leading-[1.2] tracking-tight">
-          오늘 만난 상대는<br />
-          <span className="text-[#a3e635]">어떤 유형</span>이었나요?
-        </h1>
-        <p className="text-[13px] text-[#888892] mt-3 leading-relaxed">
-          {phone} · 여덟 가지 유형 안에 파훼법과 실패 패턴을 쌓아갑니다.
-        </p>
+
+        <form action={saveMonthlyGoal} className="mt-3 space-y-3">
+          <input type="hidden" name="year_month" value={ym} />
+
+          <div>
+            <label className="text-[10px] uppercase tracking-[0.25em] text-[#a3e635] block mb-1.5">
+              이번달 성장 목표
+            </label>
+            <input
+              name="goal"
+              defaultValue={goal?.goal ?? ''}
+              maxLength={140}
+              placeholder="예: 백핸드 푸시로 게임 5할 넘기기"
+              className="w-full px-3 py-3 bg-[#14141a] border border-[#2a2a30] rounded-lg text-stone-100 text-[15px] placeholder:text-[#5a5a62] focus:outline-none focus:border-[#a3e635] focus:ring-1 focus:ring-[#a3e635] transition"
+            />
+          </div>
+
+          <div>
+            <label className="text-[10px] uppercase tracking-[0.25em] text-[#888892] block mb-1.5">
+              집중 포인트 3 — 매 연습마다 떠올릴 것
+            </label>
+            <div className="grid sm:grid-cols-3 gap-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="relative">
+                  <span className="absolute top-2 left-2.5 font-mono text-[10px] text-[#5a5a62]">
+                    0{i}
+                  </span>
+                  <input
+                    name={`focus_${i}`}
+                    defaultValue={
+                      (goal as unknown as Record<string, string> | null)?.[`focus_${i}`] ?? ''
+                    }
+                    maxLength={80}
+                    placeholder="포인트…"
+                    className="w-full pt-7 pb-3 px-2.5 bg-[#14141a] border border-[#2a2a30] rounded-lg text-stone-100 text-sm placeholder:text-[#5a5a62] focus:outline-none focus:border-[#a3e635] transition"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            className="w-full sm:w-auto px-6 py-2.5 bg-[#a3e635] text-[#0a0a0a] rounded font-bold uppercase tracking-[0.2em] text-[11px] hover:bg-lime-300 transition"
+          >
+            Save Plan
+          </button>
+        </form>
       </section>
 
-      {/* 8유형 그리드 */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-        {((types ?? []) as OpponentType[]).map((t) => {
-          const notes = noteCount[t.id] ?? 0;
-          const games = gameCount[t.id] ?? 0;
-          const code = typeCode(t.slug);
-          const num = String(t.sort_order).padStart(2, '0');
-          return (
-            <Link
-              key={t.id}
-              href={`/types/${t.slug}`}
-              className="group relative block bg-[#14141a] border border-[#2a2a30] rounded-xl p-4 hover:border-[#a3e635]/60 hover:bg-[#1a1a22] transition"
-            >
-              <div className="flex items-start justify-between">
-                <span className="font-mono text-[10px] tracking-[0.2em] text-[#5a5a62]">{num}</span>
-                {notes > 0 && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#a3e635] shadow-[0_0_8px_#a3e635]" />
-                )}
-              </div>
-              <div className="mt-5">
-                <div className="font-mono text-[11px] tracking-[0.2em] text-[#a3e635]">{code}</div>
-                <div className="font-bold text-stone-100 text-[15px] mt-1">{t.label}</div>
-              </div>
-              <p className="text-[11px] text-[#888892] mt-2 line-clamp-2 leading-relaxed">
-                {t.description}
-              </p>
-              <div className="mt-4 pt-3 border-t border-[#2a2a30] flex items-center gap-3 text-[10px] tracking-[0.15em] uppercase">
-                <span className="text-[#a3e635] font-semibold">Notes {notes}</span>
-                <span className="text-[#5a5a62]">·</span>
-                <span className="text-[#888892]">Games {games}</span>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
+      {/* 메트릭 */}
+      <section className="grid grid-cols-3 gap-2 mb-8">
+        <Stat label="Mastery Avg" value={`${avgMastery}%`} accent="#a3e635" />
+        <Stat label={`Sessions ${ym.slice(5)}`} value={String(sessionCount ?? 0)} />
+        <Stat label="Player" value={phone} small />
+      </section>
 
-      {/* 빠른 액션 */}
-      <div className="mt-8 grid grid-cols-3 gap-2">
-        <Link
-          href="/sessions"
-          className="text-center py-3 bg-[#a3e635] text-[#0a0a0a] font-bold rounded-lg hover:bg-lime-300 transition text-[12px] uppercase tracking-[0.15em]"
-        >
-          + Log Session
-        </Link>
-        <Link
-          href="/calendar"
-          className="text-center py-3 bg-[#14141a] border border-[#2a2a30] text-stone-100 font-medium rounded-lg hover:border-[#a3e635]/40 transition text-[12px] uppercase tracking-[0.15em]"
-        >
-          Calendar
-        </Link>
-        <Link
-          href="/motion"
-          className="text-center py-3 bg-[#14141a] border border-[#2a2a30] text-stone-100 font-medium rounded-lg hover:border-[#a3e635]/40 transition text-[12px] uppercase tracking-[0.15em]"
-        >
-          Motion
-        </Link>
+      {/* 빠른 진입 */}
+      <section className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-10">
+        <QuickLink href="/sessions" label="세션 기록" accent />
+        <QuickLink href="/types" label="유형 분석" />
+        <QuickLink href="/motion" label="모션 분석" />
+        <QuickLink href="/sessions?v=calendar" label="캘린더" />
+      </section>
+
+      {/* 코치 / 본인 노트 — 까먹지 말기 */}
+      <section>
+        <div className="text-[10px] uppercase tracking-[0.3em] text-[#5a5a62] mb-3">
+          Player Profile · 코치 ↔ 본인 공유 노트
+        </div>
+        <form action={savePlayerProfile} className="space-y-3 bg-[#14141a] border border-[#2a2a30] rounded-xl p-4">
+          <FieldBlock
+            name="strengths"
+            label="Strengths · 강점"
+            color="#a3e635"
+            defaultValue={profile?.strengths ?? ''}
+            placeholder="예: 포핸드 드라이브 파워, 빠른 풋워크"
+          />
+          <FieldBlock
+            name="weaknesses"
+            label="Weaknesses · 약점"
+            color="#f97316"
+            defaultValue={profile?.weaknesses ?? ''}
+            placeholder="예: 백핸드 푸시 부정확, 서비스 리시브에서 자주 실점"
+          />
+          <FieldBlock
+            name="injuries"
+            label="Injuries · 부상·주의"
+            color="#f43f5e"
+            defaultValue={profile?.injuries ?? ''}
+            placeholder="예: 오른쪽 어깨 회전근개 — 무리한 스매싱 금지"
+          />
+          <FieldBlock
+            name="coach_direction"
+            label="Coach Lead · 코치 리드 방향"
+            color="#38bdf8"
+            defaultValue={profile?.coach_direction ?? ''}
+            placeholder="코치가 이번 분기에 잡아주고 싶은 방향"
+          />
+          <FieldBlock
+            name="long_term_goal"
+            label="Long-term Goal · 장기 목표"
+            color="#facc15"
+            defaultValue={profile?.long_term_goal ?? ''}
+            placeholder="예: 3부 승급, 동호회 대회 4강"
+          />
+          <button
+            type="submit"
+            className="w-full sm:w-auto px-6 py-2.5 bg-[#a3e635] text-[#0a0a0a] rounded font-bold uppercase tracking-[0.2em] text-[11px] hover:bg-lime-300 transition"
+          >
+            Save Profile
+          </button>
+        </form>
+        <p className="text-[10px] uppercase tracking-[0.2em] text-[#5a5a62] mt-3">
+          이 노트는 세션 페이지 상단 Coach Brief에 자동 표시됩니다.
+        </p>
+      </section>
+    </div>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  accent,
+  small,
+}: {
+  label: string;
+  value: string;
+  accent?: string;
+  small?: boolean;
+}) {
+  return (
+    <div className="bg-[#14141a] border border-[#2a2a30] rounded-lg p-3">
+      <div className="text-[9px] uppercase tracking-[0.2em] text-[#5a5a62]">{label}</div>
+      <div
+        className={`mt-1 font-bold ${small ? 'text-[13px]' : 'text-xl'} truncate`}
+        style={{ color: accent ?? '#f5f5f4' }}
+      >
+        {value}
       </div>
+    </div>
+  );
+}
+
+function QuickLink({ href, label, accent }: { href: string; label: string; accent?: boolean }) {
+  return (
+    <Link
+      prefetch
+      href={href}
+      className={`text-center py-3 rounded-lg text-[11px] uppercase tracking-[0.2em] font-bold transition ${
+        accent
+          ? 'bg-[#a3e635] text-[#0a0a0a] hover:bg-lime-300'
+          : 'bg-[#14141a] border border-[#2a2a30] text-stone-100 hover:border-[#a3e635]/40'
+      }`}
+    >
+      {label}
+    </Link>
+  );
+}
+
+function FieldBlock({
+  name,
+  label,
+  color,
+  defaultValue,
+  placeholder,
+}: {
+  name: string;
+  label: string;
+  color: string;
+  defaultValue: string;
+  placeholder: string;
+}) {
+  return (
+    <div>
+      <label className="text-[10px] uppercase tracking-[0.25em] block mb-1.5 font-bold" style={{ color }}>
+        {label}
+      </label>
+      <textarea
+        name={name}
+        rows={2}
+        defaultValue={defaultValue}
+        placeholder={placeholder}
+        className="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a30] rounded text-[13px] text-stone-100 placeholder:text-[#5a5a62] focus:outline-none focus:border-[#a3e635] transition leading-relaxed"
+      />
     </div>
   );
 }

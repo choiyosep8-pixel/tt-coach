@@ -41,6 +41,28 @@ export type Session = {
   updated_at: string;
 };
 
+export type MonthlyGoal = {
+  id: string;
+  user_id: string;
+  year_month: string;
+  goal: string | null;
+  focus_1: string | null;
+  focus_2: string | null;
+  focus_3: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PlayerProfile = {
+  user_id: string;
+  strengths: string | null;
+  weaknesses: string | null;
+  injuries: string | null;
+  coach_direction: string | null;
+  long_term_goal: string | null;
+  updated_at: string;
+};
+
 export type MotionStatus = 'pending' | 'processing' | 'done' | 'failed';
 
 export type MotionAnalysis = {

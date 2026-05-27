@@ -1,8 +1,9 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { addStrategy, deleteStrategy } from './actions';
 import { CoachButton } from './coach-button';
+import { MasteryEditor } from '@/components/mastery-editor';
 import { typeCode } from '@/lib/type-codes';
 
 const KIND_META: Record<string, { label: string; color: string; dot: string }> = {
@@ -19,6 +20,8 @@ export default async function TypeDetailPage({
 }) {
   const { slug } = await params;
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
 
   const { data: type } = await supabase
     .from('opponent_types')
@@ -27,41 +30,56 @@ export default async function TypeDetailPage({
     .single();
   if (!type) notFound();
 
-  const { data: strategies } = await supabase
-    .from('counter_strategies')
-    .select('*')
-    .eq('type_id', type.id)
-    .order('kind')
-    .order('created_at', { ascending: false });
+  const [{ data: strategies }, { data: mastery }] = await Promise.all([
+    supabase
+      .from('counter_strategies')
+      .select('*')
+      .eq('type_id', type.id)
+      .order('kind')
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('type_mastery')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('type_id', type.id)
+      .maybeSingle(),
+  ]);
 
   const grouped: Record<string, NonNullable<typeof strategies>> = {
     strategy: [],
     failure: [],
     note: [],
   };
-  (strategies ?? []).forEach((s) => {
-    grouped[s.kind]?.push(s);
-  });
+  (strategies ?? []).forEach((s) => grouped[s.kind]?.push(s));
 
   const code = typeCode(type.slug);
   const num = String(type.sort_order).padStart(2, '0');
 
   return (
     <div>
-      <Link href="/" className="text-[10px] tracking-[0.25em] uppercase text-[#5a5a62] hover:text-stone-100 transition">
+      <Link
+        href="/types"
+        prefetch
+        className="text-[10px] tracking-[0.25em] uppercase text-[#5a5a62] hover:text-stone-100 transition"
+      >
         ← Catalog
       </Link>
 
-      <header className="mt-4 mb-8 border-b border-[#2a2a30] pb-8">
-        <div className="font-mono text-[11px] tracking-[0.25em] text-[#5a5a62]">
-          {num} · TYPE
-        </div>
+      <header className="mt-4 mb-6 border-b border-[#2a2a30] pb-6">
+        <div className="font-mono text-[11px] tracking-[0.25em] text-[#5a5a62]">{num} · TYPE</div>
         <div className="font-mono text-[13px] tracking-[0.25em] text-[#a3e635] mt-3">{code}</div>
         <h1 className="text-3xl font-bold mt-2 tracking-tight">{type.label}</h1>
         <p className="text-[14px] text-[#888892] mt-3 leading-relaxed max-w-prose">
           {type.description}
         </p>
       </header>
+
+      <MasteryEditor
+        typeId={type.id}
+        slug={type.slug}
+        initialPct={mastery?.mastery_percent ?? 0}
+        initialPartners={mastery?.partners ?? []}
+      />
 
       {process.env.ANTHROPIC_API_KEY && (
         <CoachButton typeSlug={type.slug} typeLabel={type.label} />
@@ -122,9 +140,7 @@ export default async function TypeDetailPage({
       })}
 
       <form action={addStrategy} className="mt-10 border-t border-[#2a2a30] pt-6 space-y-2">
-        <h3 className="text-[10px] uppercase tracking-[0.25em] text-[#888892] mb-3">
-          + Add Entry
-        </h3>
+        <h3 className="text-[10px] uppercase tracking-[0.25em] text-[#888892] mb-3">+ Add Entry</h3>
         <input type="hidden" name="slug" value={slug} />
         <input type="hidden" name="type_id" value={type.id} />
         <select
