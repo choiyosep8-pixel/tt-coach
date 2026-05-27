@@ -7,11 +7,14 @@ export default async function LoginPage({
 }) {
   const { error } = await searchParams;
   return (
-    <div className="max-w-sm mx-auto mt-12">
-      <div className="text-center mb-6">
-        <div className="text-5xl">🏓</div>
-        <h1 className="text-2xl font-bold mt-3">TT Coach</h1>
-        <p className="text-sm text-stone-600 mt-2">탁구 상대 유형별 파훼법 노트</p>
+    <div className="max-w-sm mx-auto mt-20">
+      <div className="text-center mb-12">
+        <div className="font-mono text-5xl font-bold text-[#a3e635] tracking-tight">TT</div>
+        <div className="text-[11px] uppercase tracking-[0.4em] text-[#888892] mt-2">Coach</div>
+        <p className="text-sm text-[#888892] mt-8 tracking-wide leading-relaxed">
+          상대 유형을 분류한다.<br />
+          파훼법을 쌓는다.
+        </p>
       </div>
       <form action={enter} className="space-y-3">
         <input
@@ -20,20 +23,24 @@ export default async function LoginPage({
           required
           inputMode="numeric"
           autoComplete="tel"
-          placeholder="휴대폰 번호 (예: 01012345678)"
-          className="w-full px-4 py-3 border border-stone-300 rounded-lg text-base"
+          placeholder="01012345678"
+          className="w-full px-4 py-3.5 bg-[#14141a] border border-[#2a2a30] rounded-lg text-stone-100 placeholder:text-[#5a5a62] focus:outline-none focus:border-[#a3e635] focus:ring-1 focus:ring-[#a3e635] transition tracking-wider"
         />
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && (
+          <p className="text-[11px] text-[#f97316] border border-[#f97316]/30 bg-[#f97316]/10 rounded px-3 py-2">
+            {error}
+          </p>
+        )}
         <button
           type="submit"
-          className="w-full py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-semibold"
+          className="w-full py-3.5 bg-[#a3e635] text-[#0a0a0a] rounded-lg hover:bg-lime-300 font-bold uppercase tracking-[0.2em] text-sm transition"
         >
-          들어가기
+          Enter
         </button>
       </form>
-      <p className="text-xs text-stone-500 mt-4 text-center leading-relaxed">
-        처음 입장하시면 자동으로 계정이 만들어집니다.<br />
-        비밀번호 없이 휴대폰 번호로만 들어와요.
+      <p className="text-[10px] uppercase tracking-[0.2em] text-[#5a5a62] mt-8 text-center leading-relaxed">
+        Phone number only.<br />
+        No password. First entry = signup.
       </p>
     </div>
   );

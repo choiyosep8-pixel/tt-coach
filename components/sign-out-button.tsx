@@ -11,11 +11,8 @@ export function SignOutButton() {
     router.refresh();
   }
   return (
-    <button
-      onClick={signOut}
-      className="text-stone-500 hover:text-stone-900"
-    >
-      로그아웃
+    <button onClick={signOut} className="text-[#5a5a62] hover:text-stone-100 transition">
+      나가기
     </button>
   );
 }

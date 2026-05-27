@@ -3,13 +3,14 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { addStrategy, deleteStrategy } from './actions';
 import { CoachButton } from './coach-button';
+import { typeCode } from '@/lib/type-codes';
 
-const KIND_LABEL: Record<string, string> = {
-  strategy: '✅ 파훼법',
-  failure: '❌ 자주 실패',
-  note: '📝 메모',
+const KIND_META: Record<string, { label: string; color: string; dot: string }> = {
+  strategy: { label: 'Counter',  color: 'text-[#a3e635]', dot: 'bg-[#a3e635]' },
+  failure:  { label: 'Pitfall',  color: 'text-[#f97316]', dot: 'bg-[#f97316]' },
+  note:     { label: 'Note',     color: 'text-[#888892]', dot: 'bg-[#888892]' },
 };
-const KIND_ORDER = ['strategy', 'failure', 'note'];
+const KIND_ORDER = ['strategy', 'failure', 'note'] as const;
 
 export default async function TypeDetailPage({
   params,
@@ -24,7 +25,6 @@ export default async function TypeDetailPage({
     .select('*')
     .eq('slug', slug)
     .single();
-
   if (!type) notFound();
 
   const { data: strategies } = await supabase
@@ -34,101 +34,133 @@ export default async function TypeDetailPage({
     .order('kind')
     .order('created_at', { ascending: false });
 
-  const grouped: Record<string, typeof strategies extends (infer T)[] | null ? T[] : never> =
-    { strategy: [], failure: [], note: [] };
+  const grouped: Record<string, NonNullable<typeof strategies>> = {
+    strategy: [],
+    failure: [],
+    note: [],
+  };
   (strategies ?? []).forEach((s) => {
     grouped[s.kind]?.push(s);
   });
 
+  const code = typeCode(type.slug);
+  const num = String(type.sort_order).padStart(2, '0');
+
   return (
     <div>
-      <Link href="/" className="text-sm text-stone-500 hover:text-stone-900">← 유형 목록</Link>
-      <div className="mt-3 mb-6">
-        <div className="text-4xl">{type.icon}</div>
-        <h1 className="text-2xl font-bold mt-2">{type.label}</h1>
-        <p className="text-sm text-stone-600 mt-1">{type.description}</p>
-      </div>
+      <Link href="/" className="text-[10px] tracking-[0.25em] uppercase text-[#5a5a62] hover:text-stone-100 transition">
+        ← Catalog
+      </Link>
+
+      <header className="mt-4 mb-8 border-b border-[#2a2a30] pb-8">
+        <div className="font-mono text-[11px] tracking-[0.25em] text-[#5a5a62]">
+          {num} · TYPE
+        </div>
+        <div className="font-mono text-[13px] tracking-[0.25em] text-[#a3e635] mt-3">{code}</div>
+        <h1 className="text-3xl font-bold mt-2 tracking-tight">{type.label}</h1>
+        <p className="text-[14px] text-[#888892] mt-3 leading-relaxed max-w-prose">
+          {type.description}
+        </p>
+      </header>
 
       {process.env.ANTHROPIC_API_KEY && (
         <CoachButton typeSlug={type.slug} typeLabel={type.label} />
       )}
 
-      {KIND_ORDER.map((kind) => (
-        <section key={kind} className="mt-6">
-          <h2 className="font-semibold text-sm mb-2">
-            {KIND_LABEL[kind]} ({grouped[kind].length})
-          </h2>
-          <ul className="space-y-2">
-            {grouped[kind].map((s) => (
-              <li key={s.id} className="border border-stone-200 bg-white rounded p-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1">
-                    <div className="font-medium text-sm">{s.title}</div>
-                    {s.body && <p className="text-xs text-stone-600 mt-1 whitespace-pre-wrap">{s.body}</p>}
-                    {s.source_url && (
-                      <a
-                        href={s.source_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-emerald-700 underline mt-1 inline-block"
-                      >
-                        🎥 출처
-                      </a>
-                    )}
+      {KIND_ORDER.map((kind) => {
+        const list = grouped[kind];
+        const meta = KIND_META[kind];
+        return (
+          <section key={kind} className="mt-8">
+            <h2 className="text-[10px] tracking-[0.25em] uppercase mb-3 flex items-center gap-2.5">
+              <span className={`inline-block w-1.5 h-1.5 rounded-full ${meta.dot}`} />
+              <span className={meta.color}>{meta.label}</span>
+              <span className="text-[#5a5a62] font-mono">{String(list.length).padStart(2, '0')}</span>
+            </h2>
+            <ul className="space-y-2">
+              {list.map((s) => (
+                <li key={s.id} className="bg-[#14141a] border border-[#2a2a30] rounded-lg p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="font-semibold text-[14px] text-stone-100 leading-snug">
+                        {s.title}
+                      </div>
+                      {s.body && (
+                        <p className="text-[13px] text-[#888892] mt-2 whitespace-pre-wrap leading-relaxed">
+                          {s.body}
+                        </p>
+                      )}
+                      {s.source_url && (
+                        <a
+                          href={s.source_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] uppercase tracking-[0.2em] text-[#a3e635] mt-2.5 inline-block hover:underline"
+                        >
+                          ↗ Source
+                        </a>
+                      )}
+                    </div>
+                    <form action={deleteStrategy}>
+                      <input type="hidden" name="id" value={s.id} />
+                      <input type="hidden" name="slug" value={slug} />
+                      <button className="text-[10px] uppercase tracking-[0.15em] text-[#5a5a62] hover:text-[#f97316] transition">
+                        Del
+                      </button>
+                    </form>
                   </div>
-                  <form action={deleteStrategy}>
-                    <input type="hidden" name="id" value={s.id} />
-                    <input type="hidden" name="slug" value={slug} />
-                    <button className="text-xs text-stone-400 hover:text-red-600">삭제</button>
-                  </form>
-                </div>
-              </li>
-            ))}
-            {grouped[kind].length === 0 && (
-              <li className="text-xs text-stone-400 italic">아직 없습니다. 아래에서 추가하세요.</li>
-            )}
-          </ul>
-        </section>
-      ))}
+                </li>
+              ))}
+              {list.length === 0 && (
+                <li className="text-[11px] uppercase tracking-[0.2em] text-[#5a5a62] px-1">
+                  No entries yet.
+                </li>
+              )}
+            </ul>
+          </section>
+        );
+      })}
 
-      <form action={addStrategy} className="mt-8 border-t border-stone-200 pt-4 space-y-2">
-        <h3 className="font-semibold text-sm">노트 추가</h3>
+      <form action={addStrategy} className="mt-10 border-t border-[#2a2a30] pt-6 space-y-2">
+        <h3 className="text-[10px] uppercase tracking-[0.25em] text-[#888892] mb-3">
+          + Add Entry
+        </h3>
         <input type="hidden" name="slug" value={slug} />
         <input type="hidden" name="type_id" value={type.id} />
         <select
           name="kind"
           required
           defaultValue="strategy"
-          className="w-full px-3 py-2 border border-stone-300 rounded text-sm bg-white"
+          className="w-full px-3 py-2.5 bg-[#14141a] border border-[#2a2a30] rounded text-sm text-stone-100 focus:outline-none focus:border-[#a3e635]"
         >
-          <option value="strategy">✅ 파훼법</option>
-          <option value="failure">❌ 자주 실패</option>
-          <option value="note">📝 메모</option>
+          <option value="strategy">Counter — 파훼법</option>
+          <option value="failure">Pitfall — 자주 실패</option>
+          <option value="note">Note — 메모</option>
         </select>
         <input
           name="title"
           required
           maxLength={200}
           placeholder="핵심 한 줄 (예: 길게 빼고 백핸드 푸시)"
-          className="w-full px-3 py-2 border border-stone-300 rounded text-sm"
+          className="w-full px-3 py-2.5 bg-[#14141a] border border-[#2a2a30] rounded text-sm text-stone-100 placeholder:text-[#5a5a62] focus:outline-none focus:border-[#a3e635]"
         />
         <textarea
           name="body"
           rows={3}
           placeholder="상세 (선택)"
-          className="w-full px-3 py-2 border border-stone-300 rounded text-sm"
+          className="w-full px-3 py-2.5 bg-[#14141a] border border-[#2a2a30] rounded text-sm text-stone-100 placeholder:text-[#5a5a62] focus:outline-none focus:border-[#a3e635]"
         />
         <input
           name="source_url"
           type="url"
-          placeholder="유튜브/참고 URL (선택)"
-          className="w-full px-3 py-2 border border-stone-300 rounded text-sm"
+          placeholder="https:// 참고 영상·자료 (선택)"
+          className="w-full px-3 py-2.5 bg-[#14141a] border border-[#2a2a30] rounded text-sm text-stone-100 placeholder:text-[#5a5a62] focus:outline-none focus:border-[#a3e635]"
         />
         <button
           type="submit"
-          className="w-full py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 text-sm"
+          className="w-full py-2.5 bg-[#a3e635] text-[#0a0a0a] rounded font-bold text-[12px] uppercase tracking-[0.2em] hover:bg-lime-300 transition"
         >
-          추가
+          Add
         </button>
       </form>
     </div>

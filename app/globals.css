@@ -1,26 +1,51 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #0a0a0a;
+  --card: #14141a;
+  --card-elev: #1a1a22;
+  --line: #2a2a30;
+  --text: #f5f5f4;
+  --sub: #888892;
+  --mute: #5a5a62;
+  --accent: #a3e635;
+  --accent-dim: #65a30d;
+  --warn: #f97316;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-card-elev: var(--card-elev);
+  --color-line: var(--line);
+  --color-text: var(--text);
+  --color-sub: var(--sub);
+  --color-mute: var(--mute);
+  --color-accent: var(--accent);
+  --color-accent-dim: var(--accent-dim);
+  --color-warn: var(--warn);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html, body {
+  background: var(--bg);
+  color: var(--text);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, -apple-system, "Apple SD Gothic Neo", "Pretendard", sans-serif;
+}
+
+::selection {
+  background: var(--accent);
+  color: #0a0a0a;
+}
+
+/* form 요소 다크 디폴트 */
+input, select, textarea {
+  color-scheme: dark;
+}
+input::placeholder, textarea::placeholder {
+  color: var(--mute);
 }

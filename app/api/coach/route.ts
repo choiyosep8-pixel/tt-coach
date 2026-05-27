@@ -25,30 +25,31 @@ export async function POST(req: Request) {
       .select('kind,title,body')
       .eq('type_id', type.id);
 
-    const { data: matches } = await supabase
-      .from('matches')
-      .select('played_at,opponent_name,my_score,opp_score,worked,failed,notes')
-      .eq('type_id', type.id)
-      .order('played_at', { ascending: false })
+    const { data: sessions } = await supabase
+      .from('sessions')
+      .select('session_date,kind,opponent_name,my_score,opp_score,worked,failed,notes,feedback')
+      .eq('opponent_type_id', type.id)
+      .in('kind', ['game', 'tournament'])
+      .order('session_date', { ascending: false })
       .limit(20);
 
     const noteText = (strategies ?? [])
       .map((s) => `- [${s.kind}] ${s.title}${s.body ? ` :: ${s.body}` : ''}`)
       .join('\n') || '(아직 없음)';
 
-    const matchText = (matches ?? [])
+    const sessionText = (sessions ?? [])
       .map(
         (m) =>
-          `- ${m.played_at} vs ${m.opponent_name ?? '?'} ${m.my_score ?? '-'}:${m.opp_score ?? '-'} | 통함: ${m.worked ?? '-'} | 실패: ${m.failed ?? '-'}`
+          `- ${m.session_date} ${m.kind} vs ${m.opponent_name ?? '?'} ${m.my_score ?? '-'}:${m.opp_score ?? '-'} | 통함: ${m.worked ?? '-'} | 실패: ${m.failed ?? '-'}${m.feedback ? ` | 피드백: ${m.feedback}` : ''}`
       )
-      .join('\n') || '(아직 매치 기록 없음)';
+      .join('\n') || '(아직 게임 기록 없음)';
 
     const anthropic = getAnthropic();
     const msg = await anthropic.messages.create({
       model: MODEL,
       max_tokens: 800,
       system:
-        '너는 한국 탁구 1:1 코치다. 사용자의 노트와 매치 기록을 보고 "다음에 이 유형 상대를 만나면" 무엇을 시도할지 핵심만 3가지로 조언한다. 한국어, 간결, 실전 행동 위주. 추측은 솔직히 추측이라고 말한다.',
+        '너는 한국 탁구 1:1 코치다. 사용자의 노트와 게임 기록을 보고 "다음에 이 유형 상대를 만나면" 무엇을 시도할지 핵심만 3가지로 조언한다. 한국어, 간결, 실전 행동 위주. 추측은 솔직히 추측이라고 말한다.',
       messages: [
         {
           role: 'user',
@@ -57,8 +58,8 @@ export async function POST(req: Request) {
 [내가 정리한 노트]
 ${noteText}
 
-[최근 매치 기록]
-${matchText}
+[최근 게임 기록]
+${sessionText}
 
 이 데이터를 바탕으로, 다음 만남에서 시도할 구체 행동 3가지를 추천해줘. 형식:
 1. ...
