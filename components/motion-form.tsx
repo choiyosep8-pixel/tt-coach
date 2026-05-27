@@ -1,10 +1,9 @@
 'use client';
-import { VideoUploader } from './video-uploader';
 import { createAnalysis } from '@/app/motion/actions';
 
-export function MotionForm({ userId }: { userId: string }) {
+export function MotionForm() {
   return (
-    <form action={createAnalysis} className="bg-[#14141a] border border-[#2a2a30] rounded-xl p-5 space-y-3.5">
+    <form action={createAnalysis} className="bg-[#14141a] border border-[#2a2a30] rounded-xl p-5 space-y-4">
       <h2 className="text-[10px] uppercase tracking-[0.25em] text-[#888892]">+ New Analysis</h2>
 
       <input
@@ -15,23 +14,31 @@ export function MotionForm({ userId }: { userId: string }) {
         className="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a30] rounded text-sm text-stone-100 placeholder:text-[#5a5a62] focus:outline-none focus:border-[#a3e635]"
       />
 
-      <div>
-        <label className="text-[10px] uppercase tracking-[0.25em] text-[#888892] block mb-1.5">
-          Reference — 유튜브 URL
-        </label>
-        <input
-          name="reference_url"
-          type="url"
-          placeholder="https://youtu.be/..."
-          className="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a30] rounded text-sm text-stone-100 placeholder:text-[#5a5a62] focus:outline-none focus:border-[#a3e635]"
-        />
-      </div>
-
-      <div className="border-l-2 border-[#a3e635]/40 pl-3 ml-1">
-        <label className="text-[10px] uppercase tracking-[0.25em] text-[#a3e635] block mb-1.5">
-          My Video — 내 스윙 업로드
-        </label>
-        <VideoUploader userId={userId} />
+      <div className="grid sm:grid-cols-2 gap-3">
+        <div>
+          <label className="text-[10px] uppercase tracking-[0.25em] text-[#888892] block mb-1.5">
+            Reference — 롤모델 유튜브 URL
+          </label>
+          <input
+            name="reference_url"
+            type="url"
+            required
+            placeholder="https://youtu.be/..."
+            className="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a30] rounded text-sm text-stone-100 placeholder:text-[#5a5a62] focus:outline-none focus:border-[#a3e635]"
+          />
+        </div>
+        <div>
+          <label className="text-[10px] uppercase tracking-[0.25em] text-[#a3e635] block mb-1.5">
+            Mine — 내 유튜브 URL
+          </label>
+          <input
+            name="my_video_url"
+            type="url"
+            required
+            placeholder="https://youtu.be/..."
+            className="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a30] rounded text-sm text-stone-100 placeholder:text-[#5a5a62] focus:outline-none focus:border-[#a3e635]"
+          />
+        </div>
       </div>
 
       <textarea
@@ -47,6 +54,10 @@ export function MotionForm({ userId }: { userId: string }) {
       >
         Request Analysis
       </button>
+
+      <p className="text-[10px] uppercase tracking-[0.2em] text-[#5a5a62] text-center">
+        Both videos must be on YouTube. CLI will fetch &amp; compare.
+      </p>
     </form>
   );
 }

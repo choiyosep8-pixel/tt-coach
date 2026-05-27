@@ -36,7 +36,7 @@ export default async function MotionPage({
           모션 <span className="text-[#a3e635]">비교</span>
         </h1>
         <p className="text-[13px] text-[#888892] mt-3 leading-relaxed">
-          롤모델 유튜브 + 내 영상 → 클로드가 키프레임 비교해 피드백을 박아드립니다.
+          롤모델 유튜브 URL + 내 유튜브 URL → CLI에서 두 영상 키프레임 비교 → 피드백.
         </p>
       </header>
 
@@ -46,7 +46,7 @@ export default async function MotionPage({
         </div>
       )}
 
-      <MotionForm userId={user.id} />
+      <MotionForm />
 
       <section className="mt-8">
         <h2 className="text-[10px] uppercase tracking-[0.25em] text-[#888892] mb-3">
@@ -72,12 +72,6 @@ export default async function MotionPage({
                         {a.focus}
                       </p>
                     )}
-                    <div className="mt-3 flex items-center gap-2 text-[10px] uppercase tracking-[0.15em] text-[#5a5a62]">
-                      {a.reference_url && <span>↗ Ref</span>}
-                      {a.my_video_paths.length > 0 && (
-                        <span>Video × {a.my_video_paths.length}</span>
-                      )}
-                    </div>
                   </div>
                   <MotionStatusBadge status={a.status} />
                 </div>

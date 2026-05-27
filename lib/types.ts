@@ -49,6 +49,7 @@ export type MotionAnalysis = {
   user_id: string;
   title: string;
   reference_url: string | null;
+  my_video_url: string | null;
   my_video_paths: string[];
   focus: string | null;
   status: MotionStatus;

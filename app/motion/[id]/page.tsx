@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { MotionStatusBadge } from '@/components/motion-status-badge';
 import { deleteAnalysis } from '../actions';
 import { CopyCommand } from './copy-command';
+import { youtubeEmbedUrl } from '@/lib/youtube';
 import type { MotionAnalysis } from '@/lib/types';
 
 export default async function MotionDetailPage({
@@ -24,18 +25,8 @@ export default async function MotionDetailPage({
 
   if (!a) notFound();
 
-  // 영상 signed URL (1시간)
-  const signedUrls: string[] = [];
-  if (a.my_video_paths?.length) {
-    const { data: signed } = await supabase
-      .storage
-      .from('session-videos')
-      .createSignedUrls(a.my_video_paths, 3600);
-    (signed ?? []).forEach((s) => {
-      if (s.signedUrl) signedUrls.push(s.signedUrl);
-    });
-  }
-
+  const refEmbed = youtubeEmbedUrl(a.reference_url);
+  const mineEmbed = youtubeEmbedUrl(a.my_video_url);
   const command = `motion ${a.short_id}`;
 
   return (
@@ -60,70 +51,36 @@ export default async function MotionDetailPage({
         </div>
       </header>
 
-      {/* 사용자에게 채팅 명령 안내 */}
       {a.status === 'pending' && (
         <section className="mb-6 border border-[#a3e635]/40 bg-[#a3e635]/[0.04] rounded-lg p-4">
           <div className="text-[10px] uppercase tracking-[0.25em] text-[#a3e635] mb-2">
-            다음 액션 — 클로드 채팅에 붙여넣기
+            CLI에서 실행하기
           </div>
           <CopyCommand command={command} />
           <p className="text-[11px] text-[#888892] mt-3 leading-relaxed">
-            클로드가 yt-dlp + ffmpeg로 두 영상 키프레임 추출 후 비교 분석합니다.
-            결과가 박히면 이 페이지에 자동 노출됩니다.
+            클로드 코드 채팅에 위 명령을 붙여넣으면 두 유튜브 영상을 받아와 키프레임을 비교하고
+            결과를 여기로 박아드립니다.
           </p>
         </section>
       )}
 
-      {/* 입력 정보 */}
-      <section className="space-y-3 mb-6">
-        {a.reference_url && (
-          <div>
-            <div className="text-[10px] uppercase tracking-[0.25em] text-[#888892] mb-1.5">
-              Reference URL
-            </div>
-            <a
-              href={a.reference_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[13px] text-[#a3e635] underline underline-offset-2 break-all"
-            >
-              {a.reference_url}
-            </a>
-          </div>
-        )}
-
-        {signedUrls.length > 0 && (
-          <div>
-            <div className="text-[10px] uppercase tracking-[0.25em] text-[#888892] mb-2">
-              My Video × {signedUrls.length}
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {signedUrls.map((url, i) => (
-                <video
-                  key={i}
-                  src={url}
-                  controls
-                  preload="metadata"
-                  className="w-full rounded border border-[#2a2a30] bg-black"
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {a.focus && (
-          <div>
-            <div className="text-[10px] uppercase tracking-[0.25em] text-[#888892] mb-1.5">
-              Focus
-            </div>
-            <p className="text-[13px] text-stone-100 whitespace-pre-wrap leading-relaxed">
-              {a.focus}
-            </p>
-          </div>
-        )}
+      {/* 영상 비교 — 임베드 2장 */}
+      <section className="grid sm:grid-cols-2 gap-3 mb-6">
+        <VideoBlock label="Reference" url={a.reference_url} embed={refEmbed} accent="#888892" />
+        <VideoBlock label="Mine" url={a.my_video_url} embed={mineEmbed} accent="#a3e635" />
       </section>
 
-      {/* 결과 */}
+      {a.focus && (
+        <section className="mb-6">
+          <div className="text-[10px] uppercase tracking-[0.25em] text-[#888892] mb-1.5">
+            Focus
+          </div>
+          <p className="text-[13px] text-stone-100 whitespace-pre-wrap leading-relaxed">
+            {a.focus}
+          </p>
+        </section>
+      )}
+
       {a.feedback && (
         <section className="border border-[#a3e635]/30 bg-[#a3e635]/[0.04] rounded-lg p-5 mb-6">
           <div className="text-[10px] uppercase tracking-[0.25em] text-[#a3e635] mb-3">
@@ -148,6 +105,51 @@ export default async function MotionDetailPage({
           Delete Analysis
         </button>
       </form>
+    </div>
+  );
+}
+
+function VideoBlock({
+  label,
+  url,
+  embed,
+  accent,
+}: {
+  label: string;
+  url: string | null;
+  embed: string | null;
+  accent: string;
+}) {
+  return (
+    <div>
+      <div
+        className="text-[10px] uppercase tracking-[0.25em] mb-2 font-bold"
+        style={{ color: accent }}
+      >
+        {label}
+      </div>
+      {embed ? (
+        <div className="aspect-video bg-black rounded-lg overflow-hidden border border-[#2a2a30]">
+          <iframe
+            src={embed}
+            className="w-full h-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerPolicy="strict-origin-when-cross-origin"
+            allowFullScreen
+          />
+        </div>
+      ) : url ? (
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block text-[12px] text-[#a3e635] underline underline-offset-2 break-all"
+        >
+          {url}
+        </a>
+      ) : (
+        <div className="text-[11px] uppercase tracking-[0.2em] text-[#5a5a62]">No URL</div>
+      )}
     </div>
   );
 }

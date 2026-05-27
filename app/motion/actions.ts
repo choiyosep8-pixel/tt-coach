@@ -2,6 +2,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { extractYouTubeId } from '@/lib/youtube';
 
 function toStr(v: FormDataEntryValue | null): string | null {
   const s = String(v ?? '').trim();
@@ -19,14 +20,19 @@ export async function createAnalysis(formData: FormData) {
   }
 
   const reference_url = toStr(formData.get('reference_url'));
+  const my_video_url = toStr(formData.get('my_video_url'));
   const focus = toStr(formData.get('focus'));
-  const videoPathsRaw = String(formData.get('video_paths') ?? '');
-  const my_video_paths = videoPathsRaw
-    ? videoPathsRaw.split(',').map((s) => s.trim()).filter(Boolean)
-    : [];
 
-  if (!reference_url && my_video_paths.length === 0) {
-    redirect(`/motion?error=${encodeURIComponent('유튜브 URL 또는 내 영상 중 하나는 필요합니다')}`);
+  if (!reference_url || !my_video_url) {
+    redirect(
+      `/motion?error=${encodeURIComponent('롤모델 유튜브 URL과 내 유튜브 URL 모두 필요합니다')}`
+    );
+  }
+  if (!extractYouTubeId(reference_url)) {
+    redirect(`/motion?error=${encodeURIComponent('롤모델 URL이 유튜브 형식이 아닙니다')}`);
+  }
+  if (!extractYouTubeId(my_video_url)) {
+    redirect(`/motion?error=${encodeURIComponent('내 영상 URL이 유튜브 형식이 아닙니다')}`);
   }
 
   const { data: inserted } = await supabase
@@ -35,11 +41,11 @@ export async function createAnalysis(formData: FormData) {
       user_id: user.id,
       title,
       reference_url,
-      my_video_paths,
+      my_video_url,
       focus,
       status: 'pending',
     })
-    .select('id, short_id')
+    .select('id')
     .single();
 
   revalidatePath('/motion');
@@ -57,14 +63,6 @@ export async function deleteAnalysis(formData: FormData) {
   const id = String(formData.get('id') ?? '');
   if (!id) return;
 
-  const { data: row } = await supabase
-    .from('motion_analyses')
-    .select('my_video_paths')
-    .eq('id', id)
-    .single();
-  if (row?.my_video_paths?.length) {
-    await supabase.storage.from('session-videos').remove(row.my_video_paths);
-  }
   await supabase.from('motion_analyses').delete().eq('id', id);
   revalidatePath('/motion');
   redirect('/motion');
