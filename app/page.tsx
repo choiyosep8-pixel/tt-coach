@@ -100,10 +100,10 @@ export default async function HomePage() {
           Calendar
         </Link>
         <Link
-          href="/sessions"
+          href="/motion"
           className="text-center py-3 bg-[#14141a] border border-[#2a2a30] text-stone-100 font-medium rounded-lg hover:border-[#a3e635]/40 transition text-[12px] uppercase tracking-[0.15em]"
         >
-          Video
+          Motion
         </Link>
       </div>
     </div>

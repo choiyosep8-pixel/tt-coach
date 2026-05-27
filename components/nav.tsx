@@ -16,10 +16,11 @@ export async function Nav() {
           </span>
         </Link>
         {user ? (
-          <nav className="flex items-center gap-5 text-[12px] uppercase tracking-[0.15em]">
+          <nav className="flex items-center gap-4 text-[11px] uppercase tracking-[0.15em]">
             <Link href="/" className="text-[#888892] hover:text-stone-100 transition">유형</Link>
             <Link href="/sessions" className="text-[#888892] hover:text-stone-100 transition">세션</Link>
             <Link href="/calendar" className="text-[#888892] hover:text-stone-100 transition">캘린더</Link>
+            <Link href="/motion" className="text-[#888892] hover:text-stone-100 transition">모션</Link>
             <SignOutButton />
           </nav>
         ) : (

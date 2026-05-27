@@ -40,3 +40,22 @@ export type Session = {
   created_at: string;
   updated_at: string;
 };
+
+export type MotionStatus = 'pending' | 'processing' | 'done' | 'failed';
+
+export type MotionAnalysis = {
+  id: string;
+  short_id: string;
+  user_id: string;
+  title: string;
+  reference_url: string | null;
+  my_video_paths: string[];
+  focus: string | null;
+  status: MotionStatus;
+  feedback: string | null;
+  keyframes_ref: string[] | null;
+  keyframes_mine: string[] | null;
+  error: string | null;
+  created_at: string;
+  updated_at: string;
+};
