@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
@@ -15,6 +15,11 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
+  // 로그인 페이지 마운트 즉시 홈 RSC payload prefetch
+  useEffect(() => {
+    router.prefetch('/');
+  }, [router]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();

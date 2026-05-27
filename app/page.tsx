@@ -9,47 +9,36 @@ function thisMonth(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
+type DashPayload = {
+  goal: MonthlyGoal | null;
+  profile: PlayerProfile | null;
+  mastery_avg: number;
+  session_count: number;
+};
+
 export default async function HomePage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
+
+  // getSession = cookie JWT 디코드만 (no Auth round-trip)
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) redirect('/login');
+  const user = session.user;
 
   const ym = thisMonth();
 
-  const [
-    { data: goal },
-    { data: profile },
-    { data: masterySum },
-    { count: sessionCount },
-  ] = await Promise.all([
-    supabase
-      .from('monthly_goals')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('year_month', ym)
-      .maybeSingle<MonthlyGoal>(),
-    supabase
-      .from('player_profile')
-      .select('*')
-      .eq('user_id', user.id)
-      .maybeSingle<PlayerProfile>(),
-    supabase.from('type_mastery').select('mastery_percent').eq('user_id', user.id),
-    supabase
-      .from('sessions')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .gte('session_date', `${ym}-01`),
-  ]);
-
-  const avgMastery =
-    masterySum && masterySum.length > 0
-      ? Math.round(masterySum.reduce((s, r) => s + (r.mastery_percent ?? 0), 0) / 8)
-      : 0;
+  // 단일 RPC = 1 round-trip
+  const { data: dashRaw } = await supabase.rpc('get_home_dashboard', {
+    p_year_month: ym,
+  });
+  const dash = (dashRaw ?? {}) as Partial<DashPayload>;
+  const goal = dash.goal ?? null;
+  const profile = dash.profile ?? null;
+  const avgMastery = dash.mastery_avg ?? 0;
+  const sessionCount = dash.session_count ?? 0;
   const phone = user.user_metadata?.display_name ?? user.email ?? '';
 
   return (
     <div>
-      {/* 이번달 — 가장 큰 자리 */}
       <section className="pt-2 mb-8">
         <div className="text-[10px] uppercase tracking-[0.3em] text-[#5a5a62]">
           {ym} · Monthly Plan
@@ -104,14 +93,12 @@ export default async function HomePage() {
         </form>
       </section>
 
-      {/* 메트릭 */}
       <section className="grid grid-cols-3 gap-2 mb-8">
         <Stat label="Mastery Avg" value={`${avgMastery}%`} accent="#a3e635" />
-        <Stat label={`Sessions ${ym.slice(5)}`} value={String(sessionCount ?? 0)} />
+        <Stat label={`Sessions ${ym.slice(5)}`} value={String(sessionCount)} />
         <Stat label="Player" value={phone} small />
       </section>
 
-      {/* 빠른 진입 */}
       <section className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-10">
         <QuickLink href="/sessions" label="세션 기록" accent />
         <QuickLink href="/types" label="유형 분석" />
@@ -119,7 +106,6 @@ export default async function HomePage() {
         <QuickLink href="/sessions?v=calendar" label="캘린더" />
       </section>
 
-      {/* 코치 / 본인 노트 — 까먹지 말기 */}
       <section>
         <div className="text-[10px] uppercase tracking-[0.3em] text-[#5a5a62] mb-3">
           Player Profile · 코치 ↔ 본인 공유 노트
@@ -175,17 +161,7 @@ export default async function HomePage() {
   );
 }
 
-function Stat({
-  label,
-  value,
-  accent,
-  small,
-}: {
-  label: string;
-  value: string;
-  accent?: string;
-  small?: boolean;
-}) {
+function Stat({ label, value, accent, small }: { label: string; value: string; accent?: string; small?: boolean }) {
   return (
     <div className="bg-[#14141a] border border-[#2a2a30] rounded-lg p-3">
       <div className="text-[9px] uppercase tracking-[0.2em] text-[#5a5a62]">{label}</div>
