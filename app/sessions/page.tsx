@@ -1,66 +1,64 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { SessionForm } from '@/components/session-form';
-import { SessionCard } from '@/components/session-card';
 import { CoachBrief } from '@/components/coach-brief';
-import { CalendarView } from './calendar-view';
-import type { Session, MonthlyGoal, PlayerProfile } from '@/lib/types';
+import { WeeklyView } from './weekly-view';
+import { MonthlyView } from './monthly-view';
+import type { MonthlyGoal, PlayerProfile } from '@/lib/types';
 
-type SearchParams = Promise<{ v?: 'list' | 'calendar'; m?: string; d?: string }>;
+type SearchParams = Promise<{
+  v?: 'week' | 'month';
+  w?: string;
+  m?: string;
+}>;
 
 function thisMonth(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
-export default async function SessionsPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
-  const { v, m, d } = await searchParams;
-  const view: 'list' | 'calendar' = v === 'calendar' ? 'calendar' : 'list';
+function toIsoDate(d: Date): string {
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+}
+
+// 주어진 날짜가 속한 주의 월요일을 ISO 형식으로 반환
+function mondayOf(date: Date): Date {
+  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const dow = d.getUTCDay() || 7; // 0(일) → 7
+  d.setUTCDate(d.getUTCDate() - (dow - 1));
+  return d;
+}
+
+export default async function SessionsPage({ searchParams }: { searchParams: SearchParams }) {
+  const { v, w, m } = await searchParams;
+  const view: 'week' | 'month' = v === 'month' ? 'month' : 'week';
   const ym = thisMonth();
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) redirect('/login');
+  const userId = session.user.id;
 
-  const [
-    { data: opponentTypes },
-    { data: goal },
-    { data: profile },
-    { data: sessions },
-  ] = await Promise.all([
-    supabase
-      .from('opponent_types')
-      .select('id,slug,label,icon')
-      .order('sort_order'),
+  const [{ data: goal }, { data: profile }] = await Promise.all([
     supabase
       .from('monthly_goals')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('year_month', ym)
       .maybeSingle<MonthlyGoal>(),
     supabase
       .from('player_profile')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .maybeSingle<PlayerProfile>(),
-    view === 'list'
-      ? supabase
-          .from('sessions')
-          .select(`
-            id, session_date, kind, title, opponent_type_id, opponent_name,
-            my_score, opp_score, worked, failed, video_paths, reference_url,
-            feedback, notes, created_at,
-            type:opponent_types(label,icon,slug)
-          `)
-          .order('session_date', { ascending: false })
-          .order('created_at', { ascending: false })
-          .limit(50)
-      : Promise.resolve({ data: null }),
   ]);
+
+  let weekMonday: Date;
+  if (view === 'week') {
+    weekMonday = w && /^\d{4}-\d{2}-\d{2}$/.test(w) ? new Date(`${w}T00:00:00Z`) : mondayOf(new Date());
+  } else {
+    weekMonday = mondayOf(new Date()); // not used in month view
+  }
+  const monthStr = m && /^\d{4}-\d{2}$/.test(m) ? m : thisMonth();
 
   return (
     <div>
@@ -71,66 +69,40 @@ export default async function SessionsPage({
 
       <CoachBrief ym={ym} goal={goal ?? null} profile={profile ?? null} collapsible />
 
-      {/* View toggle */}
-      <div className="inline-flex border border-[#2a2a30] rounded overflow-hidden mb-4">
+      <div className="flex items-center justify-between mb-4">
+        <div className="inline-flex border border-[#2a2a30] rounded overflow-hidden">
+          <Link
+            prefetch
+            href="/sessions?v=week"
+            className={`px-3.5 py-1.5 text-[10px] uppercase tracking-[0.2em] ${
+              view === 'week' ? 'bg-[#a3e635] text-[#0a0a0a] font-bold' : 'text-[#888892] hover:text-stone-100'
+            }`}
+          >
+            주간
+          </Link>
+          <Link
+            prefetch
+            href="/sessions?v=month"
+            className={`px-3.5 py-1.5 text-[10px] uppercase tracking-[0.2em] ${
+              view === 'month' ? 'bg-[#a3e635] text-[#0a0a0a] font-bold' : 'text-[#888892] hover:text-stone-100'
+            }`}
+          >
+            월별
+          </Link>
+        </div>
         <Link
           prefetch
-          href="/sessions?v=list"
-          className={`px-3.5 py-1.5 text-[10px] uppercase tracking-[0.2em] ${
-            view === 'list' ? 'bg-[#a3e635] text-[#0a0a0a] font-bold' : 'text-[#888892] hover:text-stone-100'
-          }`}
+          href={`/sessions/new?date=${toIsoDate(new Date())}`}
+          className="px-3.5 py-1.5 bg-[#a3e635] text-[#0a0a0a] rounded text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-lime-300 transition"
         >
-          List
-        </Link>
-        <Link
-          prefetch
-          href="/sessions?v=calendar"
-          className={`px-3.5 py-1.5 text-[10px] uppercase tracking-[0.2em] ${
-            view === 'calendar' ? 'bg-[#a3e635] text-[#0a0a0a] font-bold' : 'text-[#888892] hover:text-stone-100'
-          }`}
-        >
-          Calendar
+          + 오늘 추가
         </Link>
       </div>
 
-      {view === 'list' ? (
-        <>
-          <SessionForm
-            userId={user.id}
-            opponentTypes={
-              (opponentTypes ?? []) as Array<{
-                id: string;
-                slug: string;
-                label: string;
-                icon: string | null;
-              }>
-            }
-          />
-          <div className="mt-8">
-            <h2 className="text-[10px] uppercase tracking-[0.25em] text-[#888892] mb-3">
-              Recent ({sessions?.length ?? 0})
-            </h2>
-            <ul className="space-y-2">
-              {((sessions ?? []) as unknown as Array<
-                Session & {
-                  type:
-                    | { label: string; icon: string | null; slug: string }
-                    | { label: string; icon: string | null; slug: string }[]
-                    | null;
-                }
-              >).map((s) => (
-                <SessionCard key={s.id} session={s} />
-              ))}
-              {(sessions ?? []).length === 0 && (
-                <li className="text-[11px] uppercase tracking-[0.2em] text-[#5a5a62]">
-                  No sessions yet.
-                </li>
-              )}
-            </ul>
-          </div>
-        </>
+      {view === 'week' ? (
+        <WeeklyView userId={userId} mondayIso={toIsoDate(weekMonday)} />
       ) : (
-        <CalendarView userId={user.id} month={m} selectedDay={d} />
+        <MonthlyView userId={userId} month={monthStr} />
       )}
     </div>
   );

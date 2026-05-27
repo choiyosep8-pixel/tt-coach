@@ -93,13 +93,30 @@ export function MasteryEditor({
           </p>
         </div>
 
-        <button
-          onClick={save}
-          disabled={pending}
-          className="w-full py-2.5 bg-[#a3e635] text-[#0a0a0a] rounded font-bold uppercase tracking-[0.2em] text-[11px] hover:bg-lime-300 disabled:opacity-40 transition"
-        >
-          {pending ? 'Saving…' : savedAt ? 'Saved ✓' : 'Save Mastery'}
-        </button>
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            onClick={save}
+            disabled={pending}
+            className="px-6 py-2.5 bg-[#a3e635] text-[#0a0a0a] rounded font-bold uppercase tracking-[0.2em] text-[11px] hover:bg-lime-300 disabled:opacity-60 disabled:cursor-wait transition inline-flex items-center justify-center gap-2"
+          >
+            {pending ? (
+              <>
+                <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                저장 중…
+              </>
+            ) : (
+              '마스터율 저장'
+            )}
+          </button>
+          <span
+            className={`text-[11px] uppercase tracking-[0.2em] text-[#a3e635] transition-opacity duration-200 ${
+              savedAt ? 'opacity-100' : 'opacity-0'
+            }`}
+            aria-live="polite"
+          >
+            ✓ 저장했습니다
+          </span>
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 'use client';
 import { createAnalysis } from '@/app/motion/actions';
+import { SubmitButton } from './submit-button';
 
 export function MotionForm() {
   return (
@@ -48,12 +49,12 @@ export function MotionForm() {
         className="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a30] rounded text-sm text-stone-100 placeholder:text-[#5a5a62] focus:outline-none focus:border-[#a3e635]"
       />
 
-      <button
-        type="submit"
-        className="w-full py-3 bg-[#a3e635] text-[#0a0a0a] rounded font-bold uppercase tracking-[0.2em] text-[12px] hover:bg-lime-300 transition"
-      >
-        Request Analysis
-      </button>
+      <SubmitButton
+        label="분석 요청"
+        pendingLabel="요청 중…"
+        savedLabel="요청 보냈습니다"
+        fullWidth
+      />
 
       <p className="text-[10px] uppercase tracking-[0.2em] text-[#5a5a62] text-center">
         Both videos must be on YouTube. CLI will fetch &amp; compare.

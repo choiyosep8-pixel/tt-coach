@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { SESSION_KINDS, type SessionKind } from '@/lib/session-kinds';
 import { VideoUploader } from './video-uploader';
+import { SubmitButton } from './submit-button';
 import { addSession } from '@/app/sessions/actions';
 
 type OpponentTypeOpt = { id: string; slug: string; label: string };
@@ -9,9 +10,11 @@ type OpponentTypeOpt = { id: string; slug: string; label: string };
 export function SessionForm({
   userId,
   opponentTypes,
+  defaultDate,
 }: {
   userId: string;
   opponentTypes: OpponentTypeOpt[];
+  defaultDate?: string;
 }) {
   const [kind, setKind] = useState<SessionKind>('lesson');
   const showOpponentFields = kind === 'game' || kind === 'tournament';
@@ -43,7 +46,7 @@ export function SessionForm({
         <input
           type="date"
           name="session_date"
-          defaultValue={new Date().toISOString().slice(0, 10)}
+          defaultValue={defaultDate ?? new Date().toISOString().slice(0, 10)}
           className="px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a30] rounded text-sm text-stone-100 focus:outline-none focus:border-[#a3e635]"
         />
         <input
@@ -124,12 +127,7 @@ export function SessionForm({
         className="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a30] rounded text-sm text-stone-100 placeholder:text-[#5a5a62] focus:outline-none focus:border-[#a3e635]"
       />
 
-      <button
-        type="submit"
-        className="w-full py-3 bg-[#a3e635] text-[#0a0a0a] rounded font-bold uppercase tracking-[0.2em] text-[12px] hover:bg-lime-300 transition"
-      >
-        Log Session
-      </button>
+      <SubmitButton label="세션 기록" pendingLabel="기록 중…" savedLabel="기록했습니다" fullWidth />
     </form>
   );
 }

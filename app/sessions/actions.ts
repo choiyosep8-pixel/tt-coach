@@ -50,8 +50,8 @@ export async function addSession(formData: FormData) {
 
   await supabase.from('sessions').insert(payload);
   revalidatePath('/sessions');
-  revalidatePath('/calendar');
   revalidatePath('/');
+  redirect('/sessions');
 }
 
 export async function updateSessionFeedback(formData: FormData) {
@@ -85,6 +85,5 @@ export async function deleteSession(formData: FormData) {
 
   await supabase.from('sessions').delete().eq('id', id);
   revalidatePath('/sessions');
-  revalidatePath('/calendar');
   revalidatePath('/');
 }

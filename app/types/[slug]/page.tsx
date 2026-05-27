@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { addStrategy, deleteStrategy } from './actions';
 import { CoachButton } from './coach-button';
 import { MasteryEditor } from '@/components/mastery-editor';
+import { SubmitButton } from '@/components/submit-button';
 import { typeCode } from '@/lib/type-codes';
 
 const KIND_META: Record<string, { label: string; color: string; dot: string }> = {
@@ -172,12 +173,7 @@ export default async function TypeDetailPage({
           placeholder="https:// 참고 영상·자료 (선택)"
           className="w-full px-3 py-2.5 bg-[#14141a] border border-[#2a2a30] rounded text-sm text-stone-100 placeholder:text-[#5a5a62] focus:outline-none focus:border-[#a3e635]"
         />
-        <button
-          type="submit"
-          className="w-full py-2.5 bg-[#a3e635] text-[#0a0a0a] rounded font-bold text-[12px] uppercase tracking-[0.2em] hover:bg-lime-300 transition"
-        >
-          Add
-        </button>
+        <SubmitButton label="노트 추가" pendingLabel="추가 중…" savedLabel="추가됐어요" fullWidth />
       </form>
     </div>
   );

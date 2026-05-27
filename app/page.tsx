@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { saveMonthlyGoal, savePlayerProfile } from './goal-actions';
+import { SubmitButton } from '@/components/submit-button';
 import type { MonthlyGoal, PlayerProfile } from '@/lib/types';
 
 function thisMonth(): string {
@@ -84,12 +85,7 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <button
-            type="submit"
-            className="w-full sm:w-auto px-6 py-2.5 bg-[#a3e635] text-[#0a0a0a] rounded font-bold uppercase tracking-[0.2em] text-[11px] hover:bg-lime-300 transition"
-          >
-            Save Plan
-          </button>
+          <SubmitButton label="이번달 계획 저장" pendingLabel="저장 중…" />
         </form>
       </section>
 
@@ -103,7 +99,7 @@ export default async function HomePage() {
         <QuickLink href="/sessions" label="세션 기록" accent />
         <QuickLink href="/types" label="유형 분석" />
         <QuickLink href="/motion" label="모션 분석" />
-        <QuickLink href="/sessions?v=calendar" label="캘린더" />
+        <QuickLink href="/sessions?v=month" label="월간 캘린더" />
       </section>
 
       <section>
@@ -146,12 +142,7 @@ export default async function HomePage() {
             defaultValue={profile?.long_term_goal ?? ''}
             placeholder="예: 3부 승급, 동호회 대회 4강"
           />
-          <button
-            type="submit"
-            className="w-full sm:w-auto px-6 py-2.5 bg-[#a3e635] text-[#0a0a0a] rounded font-bold uppercase tracking-[0.2em] text-[11px] hover:bg-lime-300 transition"
-          >
-            Save Profile
-          </button>
+          <SubmitButton label="프로필 저장" pendingLabel="저장 중…" />
         </form>
         <p className="text-[10px] uppercase tracking-[0.2em] text-[#5a5a62] mt-3">
           이 노트는 세션 페이지 상단 Coach Brief에 자동 표시됩니다.

@@ -90,9 +90,16 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3.5 bg-[#a3e635] text-[#0a0a0a] rounded-lg hover:bg-lime-300 font-bold uppercase tracking-[0.2em] text-sm transition disabled:opacity-50"
+          className="w-full py-3.5 bg-[#a3e635] text-[#0a0a0a] rounded-lg hover:bg-lime-300 font-bold uppercase tracking-[0.2em] text-sm transition disabled:opacity-60 disabled:cursor-wait inline-flex items-center justify-center gap-2"
         >
-          {loading ? 'Entering…' : 'Enter'}
+          {loading ? (
+            <>
+              <span className="w-3.5 h-3.5 border-2 border-[#0a0a0a] border-t-transparent rounded-full animate-spin" />
+              들어가는 중…
+            </>
+          ) : (
+            'Enter'
+          )}
         </button>
       </form>
       <p className="text-[10px] uppercase tracking-[0.2em] text-[#5a5a62] mt-8 text-center leading-relaxed">
