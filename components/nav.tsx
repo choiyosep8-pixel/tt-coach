@@ -20,12 +20,11 @@ export async function Nav() {
           </nav>
         ) : (
           <nav className="flex items-center gap-3 text-sm">
-            <Link href="/login" className="text-stone-600 hover:text-stone-900">로그인</Link>
             <Link
-              href="/signup"
+              href="/login"
               className="px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700"
             >
-              회원가입
+              들어가기
             </Link>
           </nav>
         )}

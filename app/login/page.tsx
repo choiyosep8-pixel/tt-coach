@@ -1,5 +1,4 @@
-import Link from 'next/link';
-import { login } from './actions';
+import { enter } from './actions';
 
 export default async function LoginPage({
   searchParams,
@@ -8,36 +7,33 @@ export default async function LoginPage({
 }) {
   const { error } = await searchParams;
   return (
-    <div className="max-w-sm mx-auto mt-8">
-      <h1 className="text-2xl font-bold mb-6">로그인</h1>
-      <form action={login} className="space-y-3">
+    <div className="max-w-sm mx-auto mt-12">
+      <div className="text-center mb-6">
+        <div className="text-5xl">🏓</div>
+        <h1 className="text-2xl font-bold mt-3">TT Coach</h1>
+        <p className="text-sm text-stone-600 mt-2">탁구 상대 유형별 파훼법 노트</p>
+      </div>
+      <form action={enter} className="space-y-3">
         <input
-          name="email"
-          type="email"
+          name="phone"
+          type="tel"
           required
-          placeholder="이메일"
-          className="w-full px-3 py-2 border border-stone-300 rounded"
-        />
-        <input
-          name="password"
-          type="password"
-          required
-          placeholder="비밀번호"
-          className="w-full px-3 py-2 border border-stone-300 rounded"
+          inputMode="numeric"
+          autoComplete="tel"
+          placeholder="휴대폰 번호 (예: 01012345678)"
+          className="w-full px-4 py-3 border border-stone-300 rounded-lg text-base"
         />
         {error && <p className="text-sm text-red-600">{error}</p>}
         <button
           type="submit"
-          className="w-full py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700"
+          className="w-full py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-semibold"
         >
-          로그인
+          들어가기
         </button>
       </form>
-      <p className="mt-4 text-sm text-stone-600 text-center">
-        계정이 없으신가요?{' '}
-        <Link href="/signup" className="text-emerald-700 underline">
-          회원가입
-        </Link>
+      <p className="text-xs text-stone-500 mt-4 text-center leading-relaxed">
+        처음 입장하시면 자동으로 계정이 만들어집니다.<br />
+        비밀번호 없이 휴대폰 번호로만 들어와요.
       </p>
     </div>
   );
