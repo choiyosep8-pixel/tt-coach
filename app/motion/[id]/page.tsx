@@ -78,7 +78,7 @@ export default async function MotionDetailPage({
       )}
 
       {/* 영상 비교 — 임베드 2장 */}
-      <section className="grid sm:grid-cols-2 gap-3 mb-6">
+      <section className="grid sm:grid-cols-2 gap-3 mb-6 min-w-0">
         <VideoBlock
           label="Reference"
           subject={a.reference_subject}
@@ -172,7 +172,7 @@ function VideoBlock({
       ? `${formatSec(startSec) || '0:00'} → ${formatSec(endSec) || 'end'}`
       : null;
   return (
-    <div>
+    <div className="min-w-0">
       <div
         className="text-[10px] uppercase tracking-[0.25em] mb-1 font-bold"
         style={{ color: accent }}

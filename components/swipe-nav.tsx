@@ -1,16 +1,20 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
-// 메뉴 순서: 홈 ↔ 세션 ↔ 유형분석 ↔ 모션분석
-const ORDER = ['/', '/sessions', '/types', '/motion'];
+const ORDER = [
+  { path: '/',         label: '홈' },
+  { path: '/sessions', label: '세션' },
+  { path: '/types',    label: '유형분석' },
+  { path: '/motion',   label: '모션분석' },
+];
 
 function matchIndex(path: string): number {
-  // 정확 매치 우선
-  if (ORDER.includes(path)) return ORDER.indexOf(path);
-  // prefix 매치 ('/sessions/123', '/sessions/new' 등도 세션으로)
+  if (ORDER.findIndex((m) => m.path === path) >= 0) {
+    return ORDER.findIndex((m) => m.path === path);
+  }
   for (let i = ORDER.length - 1; i >= 0; i--) {
-    const p = ORDER[i];
+    const p = ORDER[i].path;
     if (p === '/') continue;
     if (path === p || path.startsWith(p + '/')) return i;
   }
@@ -20,20 +24,30 @@ function matchIndex(path: string): number {
 export function SwipeNav() {
   const path = usePathname();
   const router = useRouter();
+  const [progress, setProgress] = useState(0); // -1 ~ 1
+  const [toast, setToast] = useState<{ label: string; dir: 'next' | 'prev' } | null>(null);
+  const idx = matchIndex(path);
 
   useEffect(() => {
-    const idx = matchIndex(path);
     if (idx < 0) return;
 
     let x0 = 0;
     let y0 = 0;
     let t0 = 0;
     let active = false;
+    let crossed = false;
+
+    function vibrate(ms: number | number[]) {
+      try {
+        (navigator as Navigator & { vibrate?: (p: number | number[]) => boolean }).vibrate?.(ms);
+      } catch {
+        /* ignore */
+      }
+    }
 
     function onStart(e: TouchEvent) {
       const target = e.target as HTMLElement | null;
       if (!target) return;
-      // 입력·미디어·스와이프 명시적 차단 요소 안에서는 무시
       if (
         target.closest(
           'input, textarea, select, button, a, iframe, video, audio, [data-no-swipe]'
@@ -51,37 +65,151 @@ export function SwipeNav() {
       y0 = t.clientY;
       t0 = Date.now();
       active = true;
+      crossed = false;
+    }
+
+    function onMove(e: TouchEvent) {
+      if (!active) return;
+      const t = e.touches[0];
+      const dx = t.clientX - x0;
+      const dy = t.clientY - y0;
+
+      // 세로 우세 + 충분히 움직였으면 swipe 취소
+      if (Math.abs(dy) > 20 && Math.abs(dx) < Math.abs(dy) * 1.2) {
+        active = false;
+        setProgress(0);
+        return;
+      }
+
+      const norm = Math.max(-1, Math.min(1, dx / 120));
+      setProgress(norm);
+
+      const abs = Math.abs(norm);
+      if (abs >= 0.6 && !crossed) {
+        crossed = true;
+        vibrate(15);
+      } else if (abs < 0.5) {
+        crossed = false;
+      }
     }
 
     function onEnd(e: TouchEvent) {
-      if (!active) return;
+      if (!active) {
+        setProgress(0);
+        return;
+      }
       active = false;
       const t = e.changedTouches[0];
       const dx = t.clientX - x0;
       const dy = t.clientY - y0;
       const dt = Date.now() - t0;
-      if (dt > 600) return;
-      if (Math.abs(dx) < 70) return;
-      if (Math.abs(dx) < Math.abs(dy) * 1.5) return; // 세로 우세면 스크롤로 간주
+      setProgress(0);
+
+      if (dt > 600 || Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
 
       if (dx < 0) {
-        // ← 왼쪽으로 swipe = 다음 메뉴
-        const ni = Math.min(ORDER.length - 1, idx + 1);
-        if (ni !== idx) router.push(ORDER[ni]);
+        if (idx < ORDER.length - 1) {
+          const nx = ORDER[idx + 1];
+          setToast({ label: nx.label, dir: 'next' });
+          window.setTimeout(() => setToast(null), 700);
+          router.push(nx.path);
+        } else {
+          vibrate([5, 30, 5]);
+        }
       } else {
-        // → 오른쪽으로 swipe = 이전 메뉴
-        const pi = Math.max(0, idx - 1);
-        if (pi !== idx) router.push(ORDER[pi]);
+        if (idx > 0) {
+          const pv = ORDER[idx - 1];
+          setToast({ label: pv.label, dir: 'prev' });
+          window.setTimeout(() => setToast(null), 700);
+          router.push(pv.path);
+        } else {
+          vibrate([5, 30, 5]);
+        }
       }
     }
 
     document.addEventListener('touchstart', onStart, { passive: true });
+    document.addEventListener('touchmove', onMove, { passive: true });
     document.addEventListener('touchend', onEnd, { passive: true });
     return () => {
       document.removeEventListener('touchstart', onStart);
+      document.removeEventListener('touchmove', onMove);
       document.removeEventListener('touchend', onEnd);
     };
-  }, [path, router]);
+  }, [path, idx, router]);
 
-  return null;
+  if (idx < 0) return null;
+
+  const pAbs = Math.abs(progress);
+
+  return (
+    <>
+      {/* 화면 가장자리 progress — 손가락 진행 방향 */}
+      {progress > 0 && (
+        <div
+          aria-hidden
+          className="fixed top-0 left-0 bottom-0 z-50 pointer-events-none transition-opacity"
+          style={{
+            width: `${4 + progress * 14}px`,
+            opacity: progress,
+            background: 'linear-gradient(to right, #a3e635, transparent)',
+            boxShadow: progress >= 0.6 ? '0 0 12px #a3e635' : undefined,
+          }}
+        />
+      )}
+      {progress < 0 && (
+        <div
+          aria-hidden
+          className="fixed top-0 right-0 bottom-0 z-50 pointer-events-none transition-opacity"
+          style={{
+            width: `${4 + -progress * 14}px`,
+            opacity: -progress,
+            background: 'linear-gradient(to left, #a3e635, transparent)',
+            boxShadow: -progress >= 0.6 ? '0 0 12px #a3e635' : undefined,
+          }}
+        />
+      )}
+
+      {/* 하단 4점 페이지 인디케이터 — 항상 보임 */}
+      <div
+        aria-hidden
+        className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 pointer-events-none"
+      >
+        {ORDER.map((m, i) => {
+          const isActive = i === idx;
+          return (
+            <span
+              key={m.path}
+              className="block rounded-full transition-all duration-150"
+              style={{
+                width: isActive ? 18 : 5,
+                height: isActive ? 4 : 5,
+                backgroundColor: isActive ? '#a3e635' : 'rgba(136,136,146,0.55)',
+                boxShadow: isActive ? '0 0 8px #a3e635' : undefined,
+              }}
+            />
+          );
+        })}
+      </div>
+
+      {/* 스와이프 인식 직후 토스트 */}
+      {toast && (
+        <div
+          aria-hidden
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none"
+        >
+          <div className="bg-[#a3e635] text-[#0a0a0a] px-5 py-2.5 rounded-lg font-bold uppercase tracking-[0.2em] text-sm shadow-[0_0_20px_rgba(163,230,53,0.4)] flex items-center gap-2">
+            {toast.dir === 'prev' && <span>←</span>}
+            <span>{toast.label}</span>
+            {toast.dir === 'next' && <span>→</span>}
+          </div>
+        </div>
+      )}
+
+      {/* 임계점 도달 시 (>= 0.6) 가장자리 글로우 강조용 alt sentinel */}
+      {pAbs >= 0.6 && (
+        <span aria-hidden className="sr-only">ready</span>
+      )}
+    </>
+  );
 }

@@ -5,7 +5,7 @@ const POSITIONS: Array<{ value: string; label: string }> = [
   { value: 'solo',  label: '단독' },
   { value: 'left',  label: '왼쪽' },
   { value: 'right', label: '오른쪽' },
-  { value: 'near',  label: '카메라 쪽' },
+  { value: 'near',  label: '카메라쪽' },
   { value: 'far',   label: '반대편' },
 ];
 const HANDS: Array<{ value: string; label: string }> = [
@@ -35,9 +35,6 @@ export function SubjectFieldset({
   const [position, setPosition] = useState(defaultPosition ?? '');
   const [hand, setHand] = useState(defaultHand ?? '');
 
-  const labelColor = variant === 'mine' ? 'text-[#a3e635]' : 'text-[#888892]';
-  const accentColor = variant === 'mine' ? '#a3e635' : '#888892';
-
   const subjectName = `${prefix}_subject`;
   const positionName = `${prefix}_position`;
   const handName = `${prefix}_hand`;
@@ -46,17 +43,17 @@ export function SubjectFieldset({
 
   const subjectPlaceholder =
     variant === 'mine'
-      ? '추가 특징 (옷 색·특이점 등). 예: 파란 짙은 티, 무릎 보호대'
-      : '추가 특징. 예: 검은 티 / 단독 영상이면 비움';
+      ? '예: 파란 상하의, 무릎 보호대 X'
+      : '예: 검은 티 (단독이면 비움)';
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-2.5 min-w-0">
       {/* Position chips */}
-      <div>
+      <div className="min-w-0">
         <div className="text-[9px] uppercase tracking-[0.25em] text-[#5a5a62] mb-1.5">
-          위치 — 영상에서 본인 위치
+          위치
         </div>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1">
           {POSITIONS.map((p) => {
             const active = position === p.value;
             return (
@@ -64,7 +61,7 @@ export function SubjectFieldset({
                 type="button"
                 key={p.value}
                 onClick={() => setPosition(active ? '' : p.value)}
-                className={`px-2.5 py-1 rounded text-[11px] font-semibold transition ${
+                className={`px-2 py-1 rounded text-[10px] font-semibold transition ${
                   active
                     ? 'bg-[#a3e635] text-[#0a0a0a]'
                     : 'bg-[#0a0a0a] border border-[#2a2a30] text-[#888892] hover:text-stone-100 hover:border-[#a3e635]/40'
@@ -79,11 +76,11 @@ export function SubjectFieldset({
       </div>
 
       {/* Hand chips */}
-      <div>
+      <div className="min-w-0">
         <div className="text-[9px] uppercase tracking-[0.25em] text-[#5a5a62] mb-1.5">
-          그립 — 라켓 잡은 손
+          그립
         </div>
-        <div className="flex gap-1.5">
+        <div className="flex gap-1">
           {HANDS.map((h) => {
             const active = hand === h.value;
             return (
@@ -91,7 +88,7 @@ export function SubjectFieldset({
                 type="button"
                 key={h.value}
                 onClick={() => setHand(active ? '' : h.value)}
-                className={`px-2.5 py-1 rounded text-[11px] font-semibold transition ${
+                className={`px-2 py-1 rounded text-[10px] font-semibold transition ${
                   active
                     ? 'bg-[#a3e635] text-[#0a0a0a]'
                     : 'bg-[#0a0a0a] border border-[#2a2a30] text-[#888892] hover:text-stone-100 hover:border-[#a3e635]/40'
@@ -106,9 +103,9 @@ export function SubjectFieldset({
       </div>
 
       {/* Subject 자유 텍스트 */}
-      <div>
+      <div className="min-w-0">
         <div className="text-[9px] uppercase tracking-[0.25em] text-[#5a5a62] mb-1.5">
-          추가 특징
+          특징
         </div>
         <input
           name={subjectName}
@@ -116,37 +113,31 @@ export function SubjectFieldset({
           required={required}
           maxLength={140}
           placeholder={subjectPlaceholder}
-          className="w-full px-3 py-2 bg-[#0a0a0a] border border-[#2a2a30] rounded text-[12px] text-stone-100 placeholder:text-[#5a5a62] focus:outline-none focus:border-[#a3e635]"
+          className="w-full min-w-0 px-3 py-2 bg-[#0a0a0a] border border-[#2a2a30] rounded text-[12px] text-stone-100 placeholder:text-[#5a5a62] focus:outline-none focus:border-[#a3e635]"
         />
       </div>
 
-      {/* 타임스탬프 */}
-      <div>
+      {/* 타임스탬프 — 폰에서 깨지지 않게 min-w-0 + shrink-0 */}
+      <div className="min-w-0">
         <div className="text-[9px] uppercase tracking-[0.25em] text-[#5a5a62] mb-1.5">
-          구간 (선택, 비우면 전체) <span className="text-[#5a5a62]">— MM:SS</span>
+          구간 <span className="text-[#5a5a62] normal-case tracking-normal">MM:SS · 선택</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 min-w-0">
           <input
             name={startName}
             defaultValue={defaultStart ?? ''}
-            placeholder="시작 (예: 14:30)"
-            pattern="^(\d{1,2}:)?\d{1,2}:\d{1,2}$|^\d{1,2}:\d{1,2}$|^$"
-            className="flex-1 px-3 py-2 bg-[#0a0a0a] border border-[#2a2a30] rounded text-[12px] text-stone-100 placeholder:text-[#5a5a62] focus:outline-none focus:border-[#a3e635] font-mono"
+            placeholder="시작"
+            className="flex-1 min-w-0 px-2.5 py-2 bg-[#0a0a0a] border border-[#2a2a30] rounded text-[12px] text-stone-100 placeholder:text-[#5a5a62] focus:outline-none focus:border-[#a3e635] font-mono"
           />
-          <span className="text-[#5a5a62] text-[11px]">→</span>
+          <span className="text-[#5a5a62] text-[10px] shrink-0">→</span>
           <input
             name={endName}
             defaultValue={defaultEnd ?? ''}
-            placeholder="끝 (예: 16:30)"
-            pattern="^(\d{1,2}:)?\d{1,2}:\d{1,2}$|^\d{1,2}:\d{1,2}$|^$"
-            className="flex-1 px-3 py-2 bg-[#0a0a0a] border border-[#2a2a30] rounded text-[12px] text-stone-100 placeholder:text-[#5a5a62] focus:outline-none focus:border-[#a3e635] font-mono"
+            placeholder="끝"
+            className="flex-1 min-w-0 px-2.5 py-2 bg-[#0a0a0a] border border-[#2a2a30] rounded text-[12px] text-stone-100 placeholder:text-[#5a5a62] focus:outline-none focus:border-[#a3e635] font-mono"
           />
         </div>
       </div>
-
-      {/* indicator line color */}
-      <div className="h-0.5 rounded-full" style={{ backgroundColor: `${accentColor}30` }} />
-      <span className={`hidden ${labelColor}`} />
     </div>
   );
 }
