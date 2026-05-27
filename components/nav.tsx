@@ -1,10 +1,18 @@
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
+import { cookies } from 'next/headers';
 import { SignOutButton } from './sign-out-button';
 
+// nav는 cookie 존재 여부만 확인 (Auth 서버 호출 X)
+// 진짜 user 정보는 페이지에서 fetch
 export async function Nav() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const cookieStore = await cookies();
+  const hasAuthCookie = cookieStore
+    .getAll()
+    .some(
+      (c) =>
+        c.name.startsWith('sb-') &&
+        (c.name.endsWith('-auth-token') || c.name.endsWith('-auth-token.0'))
+    );
 
   return (
     <header className="border-b border-[#2a2a30] bg-[#0a0a0a] sticky top-0 z-10">
@@ -15,7 +23,7 @@ export async function Nav() {
             Coach
           </span>
         </Link>
-        {user ? (
+        {hasAuthCookie ? (
           <nav className="flex items-center gap-4 text-[11px] uppercase tracking-[0.15em]">
             <Link prefetch href="/" className="text-[#888892] hover:text-stone-100 transition">홈</Link>
             <Link prefetch href="/sessions" className="text-[#888892] hover:text-stone-100 transition">세션</Link>
