@@ -49,7 +49,9 @@ export default async function TypeDetailPage({
         <p className="text-sm text-stone-600 mt-1">{type.description}</p>
       </div>
 
-      <CoachButton typeSlug={type.slug} typeLabel={type.label} />
+      {process.env.ANTHROPIC_API_KEY && (
+        <CoachButton typeSlug={type.slug} typeLabel={type.label} />
+      )}
 
       {KIND_ORDER.map((kind) => (
         <section key={kind} className="mt-6">
