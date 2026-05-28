@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
 const ORDER = [
@@ -10,9 +10,8 @@ const ORDER = [
 ];
 
 function matchIndex(path: string): number {
-  if (ORDER.findIndex((m) => m.path === path) >= 0) {
-    return ORDER.findIndex((m) => m.path === path);
-  }
+  const exact = ORDER.findIndex((m) => m.path === path);
+  if (exact >= 0) return exact;
   for (let i = ORDER.length - 1; i >= 0; i--) {
     const p = ORDER[i].path;
     if (p === '/') continue;
@@ -24,18 +23,24 @@ function matchIndex(path: string): number {
 export function SwipeNav() {
   const path = usePathname();
   const router = useRouter();
-  const [progress, setProgress] = useState(0); // -1 ~ 1
-  const [toast, setToast] = useState<{ label: string; dir: 'next' | 'prev' } | null>(null);
   const idx = matchIndex(path);
 
-  useEffect(() => {
-    if (idx < 0) return;
+  const [progress, setProgress] = useState(0);
+  const [toast, setToast] = useState<{ label: string; dir: 'next' | 'prev' } | null>(null);
 
+  // ref로 최신 값 — listener는 한 번만 등록
+  const idxRef = useRef(idx);
+  const routerRef = useRef(router);
+  useEffect(() => { idxRef.current = idx; }, [idx]);
+  useEffect(() => { routerRef.current = router; }, [router]);
+
+  useEffect(() => {
     let x0 = 0;
     let y0 = 0;
     let t0 = 0;
     let active = false;
     let crossed = false;
+    let navigated = false;
 
     function vibrate(ms: number | number[]) {
       try {
@@ -66,29 +71,29 @@ export function SwipeNav() {
       t0 = Date.now();
       active = true;
       crossed = false;
+      navigated = false;
     }
 
     function onMove(e: TouchEvent) {
-      if (!active) return;
+      if (!active || navigated) return;
       const t = e.touches[0];
       const dx = t.clientX - x0;
       const dy = t.clientY - y0;
 
-      // 세로 우세 + 충분히 움직였으면 swipe 취소
-      if (Math.abs(dy) > 20 && Math.abs(dx) < Math.abs(dy) * 1.2) {
+      if (Math.abs(dy) > 22 && Math.abs(dx) < Math.abs(dy) * 1.15) {
         active = false;
         setProgress(0);
         return;
       }
 
-      const norm = Math.max(-1, Math.min(1, dx / 120));
+      const norm = Math.max(-1, Math.min(1, dx / 110));
       setProgress(norm);
 
       const abs = Math.abs(norm);
-      if (abs >= 0.6 && !crossed) {
+      if (abs >= 0.55 && !crossed) {
         crossed = true;
         vibrate(15);
-      } else if (abs < 0.5) {
+      } else if (abs < 0.45) {
         crossed = false;
       }
     }
@@ -105,72 +110,84 @@ export function SwipeNav() {
       const dt = Date.now() - t0;
       setProgress(0);
 
-      if (dt > 600 || Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+      if (navigated) return;
+      if (dt > 700) return;
+      if (Math.abs(dx) < 60) return;
+      if (Math.abs(dx) < Math.abs(dy) * 1.4) return;
+
+      // 항상 최신 idx 사용
+      const curIdx = idxRef.current;
+      if (curIdx < 0) return;
 
       if (dx < 0) {
-        if (idx < ORDER.length - 1) {
-          const nx = ORDER[idx + 1];
+        if (curIdx < ORDER.length - 1) {
+          const nx = ORDER[curIdx + 1];
+          navigated = true;
           setToast({ label: nx.label, dir: 'next' });
-          window.setTimeout(() => setToast(null), 700);
-          router.push(nx.path);
+          window.setTimeout(() => setToast(null), 800);
+          routerRef.current.push(nx.path);
         } else {
           vibrate([5, 30, 5]);
         }
       } else {
-        if (idx > 0) {
-          const pv = ORDER[idx - 1];
+        if (curIdx > 0) {
+          const pv = ORDER[curIdx - 1];
+          navigated = true;
           setToast({ label: pv.label, dir: 'prev' });
-          window.setTimeout(() => setToast(null), 700);
-          router.push(pv.path);
+          window.setTimeout(() => setToast(null), 800);
+          routerRef.current.push(pv.path);
         } else {
           vibrate([5, 30, 5]);
         }
       }
     }
 
+    function onCancel() {
+      active = false;
+      setProgress(0);
+    }
+
     document.addEventListener('touchstart', onStart, { passive: true });
     document.addEventListener('touchmove', onMove, { passive: true });
     document.addEventListener('touchend', onEnd, { passive: true });
+    document.addEventListener('touchcancel', onCancel, { passive: true });
     return () => {
       document.removeEventListener('touchstart', onStart);
       document.removeEventListener('touchmove', onMove);
       document.removeEventListener('touchend', onEnd);
+      document.removeEventListener('touchcancel', onCancel);
     };
-  }, [path, idx, router]);
+  }, []); // ← deps 비움. listener는 마운트 시 한 번만 등록
 
   if (idx < 0) return null;
 
-  const pAbs = Math.abs(progress);
-
   return (
     <>
-      {/* 화면 가장자리 progress — 손가락 진행 방향 */}
       {progress > 0 && (
         <div
           aria-hidden
-          className="fixed top-0 left-0 bottom-0 z-50 pointer-events-none transition-opacity"
+          className="fixed top-0 left-0 bottom-0 z-50 pointer-events-none"
           style={{
-            width: `${4 + progress * 14}px`,
+            width: `${4 + progress * 16}px`,
             opacity: progress,
             background: 'linear-gradient(to right, #a3e635, transparent)',
-            boxShadow: progress >= 0.6 ? '0 0 12px #a3e635' : undefined,
+            boxShadow: progress >= 0.55 ? '0 0 12px #a3e635' : undefined,
           }}
         />
       )}
       {progress < 0 && (
         <div
           aria-hidden
-          className="fixed top-0 right-0 bottom-0 z-50 pointer-events-none transition-opacity"
+          className="fixed top-0 right-0 bottom-0 z-50 pointer-events-none"
           style={{
-            width: `${4 + -progress * 14}px`,
+            width: `${4 + -progress * 16}px`,
             opacity: -progress,
             background: 'linear-gradient(to left, #a3e635, transparent)',
-            boxShadow: -progress >= 0.6 ? '0 0 12px #a3e635' : undefined,
+            boxShadow: -progress >= 0.55 ? '0 0 12px #a3e635' : undefined,
           }}
         />
       )}
 
-      {/* 하단 4점 페이지 인디케이터 — 항상 보임 */}
       <div
         aria-hidden
         className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 pointer-events-none"
@@ -192,7 +209,6 @@ export function SwipeNav() {
         })}
       </div>
 
-      {/* 스와이프 인식 직후 토스트 */}
       {toast && (
         <div
           aria-hidden
@@ -204,11 +220,6 @@ export function SwipeNav() {
             {toast.dir === 'next' && <span>→</span>}
           </div>
         </div>
-      )}
-
-      {/* 임계점 도달 시 (>= 0.6) 가장자리 글로우 강조용 alt sentinel */}
-      {pAbs >= 0.6 && (
-        <span aria-hidden className="sr-only">ready</span>
       )}
     </>
   );

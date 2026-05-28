@@ -65,6 +65,32 @@ export type PlayerProfile = {
 
 export type MotionStatus = 'pending' | 'processing' | 'done' | 'failed';
 
+export type FeedbackAxis = {
+  key: string;
+  label: string;
+  score: number;          // 0~100 (Reference=100 기준)
+  color: string;          // hex
+  ref_note: string;
+  mine_note: string;
+};
+
+export type FeedbackCue = {
+  title: string;
+  detail: string;
+};
+
+export type FeedbackData = {
+  overall_score: number;
+  confidence: 'low' | 'medium' | 'high';
+  headline: string;
+  axes: FeedbackAxis[];
+  wins: string[];
+  losses: string[];
+  cues: FeedbackCue[];
+  limitations?: string[];
+  next_recording_tips?: string[];
+};
+
 export type MotionAnalysis = {
   id: string;
   short_id: string;
@@ -86,6 +112,7 @@ export type MotionAnalysis = {
   focus: string | null;
   status: MotionStatus;
   feedback: string | null;
+  feedback_data: FeedbackData | null;
   keyframes_ref: string[] | null;
   keyframes_mine: string[] | null;
   error: string | null;

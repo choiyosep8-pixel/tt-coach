@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { MotionStatusBadge } from '@/components/motion-status-badge';
+import { FeedbackView } from '@/components/feedback-view';
 import { deleteAnalysis } from '../actions';
 import { CopyCommand } from './copy-command';
 import { youtubeEmbedUrl } from '@/lib/youtube';
@@ -114,7 +115,11 @@ export default async function MotionDetailPage({
         </section>
       )}
 
-      {a.feedback && (
+      {a.feedback_data ? (
+        <div className="mb-6">
+          <FeedbackView data={a.feedback_data} />
+        </div>
+      ) : a.feedback ? (
         <section className="border border-[#a3e635]/30 bg-[#a3e635]/[0.04] rounded-lg p-5 mb-6">
           <div className="text-[10px] uppercase tracking-[0.25em] text-[#a3e635] mb-3">
             Feedback
@@ -123,7 +128,7 @@ export default async function MotionDetailPage({
             {a.feedback}
           </div>
         </section>
-      )}
+      ) : null}
 
       {a.error && (
         <section className="border border-[#f97316]/30 bg-[#f97316]/[0.06] rounded-lg p-4 mb-6">
