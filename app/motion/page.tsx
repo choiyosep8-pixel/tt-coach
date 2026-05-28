@@ -15,6 +15,8 @@ export default async function MotionPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
+  const userId = user.id;
+
   const { data: analyses } = await supabase
     .from('motion_analyses')
     .select('*')
@@ -46,7 +48,7 @@ export default async function MotionPage({
         </div>
       )}
 
-      <MotionForm />
+      <MotionForm userId={userId} />
 
       <section className="mt-8">
         <h2 className="text-[10px] uppercase tracking-[0.25em] text-[#888892] mb-3">

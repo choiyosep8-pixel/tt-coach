@@ -43,6 +43,16 @@ export default async function MotionDetailPage({
   const mineEmbed = youtubeEmbedUrl(a.my_video_url);
   const command = `motion ${a.short_id}`;
 
+  // 본인 영상이 파일 업로드면 signed URL 받기
+  let mineFileUrl: string | null = null;
+  if (a.my_video_paths && a.my_video_paths.length > 0) {
+    const { data: signed } = await supabase
+      .storage
+      .from('session-videos')
+      .createSignedUrl(a.my_video_paths[0], 3600);
+    mineFileUrl = signed?.signedUrl ?? null;
+  }
+
   return (
     <div>
       <Link
@@ -53,11 +63,23 @@ export default async function MotionDetailPage({
       </Link>
 
       <header className="mt-4 mb-6 border-b border-[#2a2a30] pb-6">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <span className="font-mono text-[11px] tracking-[0.25em] text-[#5a5a62]">
             #{a.short_id}
           </span>
           <MotionStatusBadge status={a.status} />
+          <span
+            className="text-[10px] uppercase tracking-[0.2em] font-bold px-2 py-0.5 rounded"
+            style={{
+              color: a.analysis_mode === 'vs_criteria' ? '#38bdf8' : '#a3e635',
+              backgroundColor:
+                a.analysis_mode === 'vs_criteria'
+                  ? 'rgba(56,189,248,0.12)'
+                  : 'rgba(163,230,53,0.12)',
+            }}
+          >
+            {a.analysis_mode === 'vs_criteria' ? 'Vs 코치 요구사항' : 'Vs 롤모델'}
+          </span>
         </div>
         <h1 className="text-2xl font-bold mt-3 tracking-tight">{a.title}</h1>
         <div className="font-mono text-[11px] text-[#888892] mt-2">
@@ -101,23 +123,34 @@ export default async function MotionDetailPage({
         </section>
       )}
 
-      {/* 2) 분석 영상 — 그 아래 */}
+      {/* 2) 분석 입력 — Reference 영상 OR 코치 요구사항 + Mine 영상 */}
       <section className="mb-6">
         <h2 className="text-[10px] uppercase tracking-[0.3em] text-[#888892] font-bold mb-3">
-          ▸ 분석 영상
+          ▸ 분석 입력
         </h2>
         <div className="grid sm:grid-cols-2 gap-3 min-w-0">
-          <VideoBlock
-            label="Reference"
-            subject={a.reference_subject}
-            position={a.reference_position}
-            hand={a.reference_hand}
-            startSec={a.reference_start_sec}
-            endSec={a.reference_end_sec}
-            url={a.reference_url}
-            embed={refEmbed}
-            accent="#888892"
-          />
+          {a.analysis_mode === 'vs_criteria' ? (
+            <div className="min-w-0">
+              <div className="text-[10px] uppercase tracking-[0.25em] mb-2 font-bold text-[#38bdf8]">
+                Criteria · 코치 요구사항
+              </div>
+              <div className="bg-[#0a0a0a] border border-[#38bdf8]/40 rounded-lg p-3 text-[13px] text-stone-100 whitespace-pre-wrap leading-relaxed font-mono">
+                {a.criteria}
+              </div>
+            </div>
+          ) : (
+            <VideoBlock
+              label="Reference"
+              subject={a.reference_subject}
+              position={a.reference_position}
+              hand={a.reference_hand}
+              startSec={a.reference_start_sec}
+              endSec={a.reference_end_sec}
+              url={a.reference_url}
+              embed={refEmbed}
+              accent="#888892"
+            />
+          )}
           <VideoBlock
             label="Mine"
             subject={a.my_subject}
@@ -127,13 +160,14 @@ export default async function MotionDetailPage({
             endSec={a.my_end_sec}
             url={a.my_video_url}
             embed={mineEmbed}
+            fileUrl={mineFileUrl}
             accent="#a3e635"
           />
         </div>
         {a.focus && (
           <div className="mt-4 bg-[#14141a] border border-[#2a2a30] rounded p-3">
             <div className="text-[10px] uppercase tracking-[0.25em] text-[#888892] mb-1.5">
-              Focus · 분석 포인트
+              Focus · 추가 포인트
             </div>
             <p className="text-[13px] text-stone-100 whitespace-pre-wrap leading-relaxed">
               {a.focus}
@@ -168,6 +202,7 @@ function VideoBlock({
   endSec,
   url,
   embed,
+  fileUrl,
   accent,
 }: {
   label: string;
@@ -178,6 +213,7 @@ function VideoBlock({
   endSec?: number | null;
   url: string | null;
   embed: string | null;
+  fileUrl?: string | null;
   accent: string;
 }) {
   const meta = [
@@ -222,7 +258,11 @@ function VideoBlock({
           )}
         </div>
       )}
-      {embed ? (
+      {fileUrl ? (
+        <div className="aspect-video bg-black rounded-lg overflow-hidden border border-[#2a2a30]">
+          <video src={fileUrl} controls playsInline preload="metadata" className="w-full h-full" />
+        </div>
+      ) : embed ? (
         <div className="aspect-video bg-black rounded-lg overflow-hidden border border-[#2a2a30]">
           <iframe
             src={embed}
@@ -242,7 +282,7 @@ function VideoBlock({
           {url}
         </a>
       ) : (
-        <div className="text-[11px] uppercase tracking-[0.2em] text-[#5a5a62]">No URL</div>
+        <div className="text-[11px] uppercase tracking-[0.2em] text-[#5a5a62]">파일 없음</div>
       )}
     </div>
   );

@@ -96,6 +96,8 @@ export type MotionAnalysis = {
   short_id: string;
   user_id: string;
   title: string;
+  analysis_mode: 'vs_reference' | 'vs_criteria';
+  criteria: string | null;
   reference_url: string | null;
   reference_subject: string | null;
   reference_position: string | null;
