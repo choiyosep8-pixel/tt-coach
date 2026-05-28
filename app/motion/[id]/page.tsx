@@ -78,57 +78,69 @@ export default async function MotionDetailPage({
         </section>
       )}
 
-      {/* 영상 비교 — 임베드 2장 */}
-      <section className="grid sm:grid-cols-2 gap-3 mb-6 min-w-0">
-        <VideoBlock
-          label="Reference"
-          subject={a.reference_subject}
-          position={a.reference_position}
-          hand={a.reference_hand}
-          startSec={a.reference_start_sec}
-          endSec={a.reference_end_sec}
-          url={a.reference_url}
-          embed={refEmbed}
-          accent="#888892"
-        />
-        <VideoBlock
-          label="Mine"
-          subject={a.my_subject}
-          position={a.my_position}
-          hand={a.my_hand}
-          startSec={a.my_start_sec}
-          endSec={a.my_end_sec}
-          url={a.my_video_url}
-          embed={mineEmbed}
-          accent="#a3e635"
-        />
-      </section>
-
-      {a.focus && (
-        <section className="mb-6">
-          <div className="text-[10px] uppercase tracking-[0.25em] text-[#888892] mb-1.5">
-            Focus
+      {/* 1) 최근 피드백 — 시각화를 최상단으로 */}
+      {(a.feedback_data || a.feedback) && (
+        <section className="mb-8">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-[11px] uppercase tracking-[0.3em] text-[#a3e635] font-bold">
+              ▸ 최근 피드백
+            </h2>
+            <span className="font-mono text-[10px] text-[#5a5a62]">
+              {a.updated_at?.slice(0, 16).replace('T', ' ') ?? ''}
+            </span>
           </div>
-          <p className="text-[13px] text-stone-100 whitespace-pre-wrap leading-relaxed">
-            {a.focus}
-          </p>
+          {a.feedback_data ? (
+            <FeedbackView data={a.feedback_data} />
+          ) : (
+            <div className="border border-[#a3e635]/30 bg-[#a3e635]/[0.04] rounded-lg p-5">
+              <div className="text-[14px] text-stone-100 whitespace-pre-wrap leading-relaxed">
+                {a.feedback}
+              </div>
+            </div>
+          )}
         </section>
       )}
 
-      {a.feedback_data ? (
-        <div className="mb-6">
-          <FeedbackView data={a.feedback_data} />
+      {/* 2) 분석 영상 — 그 아래 */}
+      <section className="mb-6">
+        <h2 className="text-[10px] uppercase tracking-[0.3em] text-[#888892] font-bold mb-3">
+          ▸ 분석 영상
+        </h2>
+        <div className="grid sm:grid-cols-2 gap-3 min-w-0">
+          <VideoBlock
+            label="Reference"
+            subject={a.reference_subject}
+            position={a.reference_position}
+            hand={a.reference_hand}
+            startSec={a.reference_start_sec}
+            endSec={a.reference_end_sec}
+            url={a.reference_url}
+            embed={refEmbed}
+            accent="#888892"
+          />
+          <VideoBlock
+            label="Mine"
+            subject={a.my_subject}
+            position={a.my_position}
+            hand={a.my_hand}
+            startSec={a.my_start_sec}
+            endSec={a.my_end_sec}
+            url={a.my_video_url}
+            embed={mineEmbed}
+            accent="#a3e635"
+          />
         </div>
-      ) : a.feedback ? (
-        <section className="border border-[#a3e635]/30 bg-[#a3e635]/[0.04] rounded-lg p-5 mb-6">
-          <div className="text-[10px] uppercase tracking-[0.25em] text-[#a3e635] mb-3">
-            Feedback
+        {a.focus && (
+          <div className="mt-4 bg-[#14141a] border border-[#2a2a30] rounded p-3">
+            <div className="text-[10px] uppercase tracking-[0.25em] text-[#888892] mb-1.5">
+              Focus · 분석 포인트
+            </div>
+            <p className="text-[13px] text-stone-100 whitespace-pre-wrap leading-relaxed">
+              {a.focus}
+            </p>
           </div>
-          <div className="text-[14px] text-stone-100 whitespace-pre-wrap leading-relaxed">
-            {a.feedback}
-          </div>
-        </section>
-      ) : null}
+        )}
+      </section>
 
       {a.error && (
         <section className="border border-[#f97316]/30 bg-[#f97316]/[0.06] rounded-lg p-4 mb-6">
