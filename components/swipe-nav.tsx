@@ -28,7 +28,6 @@ export function SwipeNav() {
   const [progress, setProgress] = useState(0);
   const [toast, setToast] = useState<{ label: string; dir: 'next' | 'prev' } | null>(null);
 
-  // ref로 최신 값 — listener는 한 번만 등록
   const idxRef = useRef(idx);
   const routerRef = useRef(router);
   useEffect(() => { idxRef.current = idx; }, [idx]);
@@ -53,9 +52,11 @@ export function SwipeNav() {
     function onStart(e: TouchEvent) {
       const target = e.target as HTMLElement | null;
       if (!target) return;
+      // 진짜 입력 영역만 차단: 텍스트 입력·미디어 컨트롤·명시적 차단
+      // 링크(<a>)와 버튼(<button>)은 카드 그리드를 덮고 있어 제외하면 swipe 자체 불가
       if (
         target.closest(
-          'input, textarea, select, button, a, iframe, video, audio, [data-no-swipe]'
+          'input, textarea, select, iframe, video, audio, [data-no-swipe]'
         )
       ) {
         active = false;
@@ -80,7 +81,7 @@ export function SwipeNav() {
       const dx = t.clientX - x0;
       const dy = t.clientY - y0;
 
-      if (Math.abs(dy) > 22 && Math.abs(dx) < Math.abs(dy) * 1.15) {
+      if (Math.abs(dy) > 24 && Math.abs(dx) < Math.abs(dy) * 1.15) {
         active = false;
         setProgress(0);
         return;
@@ -96,6 +97,20 @@ export function SwipeNav() {
       } else if (abs < 0.45) {
         crossed = false;
       }
+    }
+
+    function jamClickFor(ms: number) {
+      // swipe 직후 들어오는 click 이벤트를 N ms 동안 capture 단계에서 차단
+      const blocker = (ev: Event) => {
+        ev.stopPropagation();
+        ev.preventDefault();
+      };
+      document.addEventListener('click', blocker, { capture: true });
+      document.addEventListener('touchend', blocker, { capture: true });
+      window.setTimeout(() => {
+        document.removeEventListener('click', blocker, { capture: true } as EventListenerOptions);
+        document.removeEventListener('touchend', blocker, { capture: true } as EventListenerOptions);
+      }, ms);
     }
 
     function onEnd(e: TouchEvent) {
@@ -115,27 +130,26 @@ export function SwipeNav() {
       if (Math.abs(dx) < 60) return;
       if (Math.abs(dx) < Math.abs(dy) * 1.4) return;
 
-      // 항상 최신 idx 사용
       const curIdx = idxRef.current;
       if (curIdx < 0) return;
 
+      const goTo = (next: typeof ORDER[number], dir: 'next' | 'prev') => {
+        navigated = true;
+        jamClickFor(280);
+        setToast({ label: next.label, dir });
+        window.setTimeout(() => setToast(null), 800);
+        routerRef.current.push(next.path);
+      };
+
       if (dx < 0) {
         if (curIdx < ORDER.length - 1) {
-          const nx = ORDER[curIdx + 1];
-          navigated = true;
-          setToast({ label: nx.label, dir: 'next' });
-          window.setTimeout(() => setToast(null), 800);
-          routerRef.current.push(nx.path);
+          goTo(ORDER[curIdx + 1], 'next');
         } else {
           vibrate([5, 30, 5]);
         }
       } else {
         if (curIdx > 0) {
-          const pv = ORDER[curIdx - 1];
-          navigated = true;
-          setToast({ label: pv.label, dir: 'prev' });
-          window.setTimeout(() => setToast(null), 800);
-          routerRef.current.push(pv.path);
+          goTo(ORDER[curIdx - 1], 'prev');
         } else {
           vibrate([5, 30, 5]);
         }
@@ -157,7 +171,7 @@ export function SwipeNav() {
       document.removeEventListener('touchend', onEnd);
       document.removeEventListener('touchcancel', onCancel);
     };
-  }, []); // ← deps 비움. listener는 마운트 시 한 번만 등록
+  }, []);
 
   if (idx < 0) return null;
 
