@@ -11,7 +11,7 @@ export function SignOutButton() {
     router.refresh();
   }
   return (
-    <button onClick={signOut} className="text-[#5a5a62] hover:text-stone-100 transition">
+    <button onClick={signOut} className="text-[14px] text-[#5a5a62] hover:text-stone-100 transition py-1">
       나가기
     </button>
   );

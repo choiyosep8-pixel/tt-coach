@@ -29,16 +29,18 @@ export async function Nav() {
   const path = h.get('x-pathname') ?? h.get('x-invoke-path') ?? null;
 
   return (
-    <header className="border-b border-[#2a2a30] bg-[#0a0a0a] sticky top-0 z-10">
-      <div className="max-w-3xl mx-auto px-3 sm:px-4 py-3 flex items-center justify-between gap-2 min-w-0">
+    <header
+      className="border-b border-[#2a2a30] bg-[#0a0a0a] sticky top-0 z-10 safe-top"
+    >
+      <div className="max-w-3xl mx-auto px-4 pt-3 pb-3 flex items-center justify-between gap-2 min-w-0">
         <Link href="/" prefetch className="flex items-center gap-2 group shrink-0">
-          <span className="font-mono text-[15px] font-bold tracking-tight text-[#a3e635]">TT</span>
-          <span className="hidden sm:inline text-[11px] uppercase tracking-[0.25em] text-[#888892] group-hover:text-stone-100 transition">
-            Coach
+          <span className="font-mono text-[17px] font-bold tracking-tight text-[#a3e635]">TT</span>
+          <span className="hidden sm:inline text-[13px] text-[#888892] group-hover:text-stone-100 transition">
+            코치노트
           </span>
         </Link>
         {hasAuthCookie ? (
-          <nav className="flex items-center gap-3 sm:gap-4 text-[11px] uppercase tracking-[0.15em] min-w-0">
+          <nav className="flex items-center gap-4 sm:gap-5 text-[14px] min-w-0">
             {ITEMS.map((it) => {
               const active = matches(path, it.href, it.prefix);
               return (
@@ -46,7 +48,7 @@ export async function Nav() {
                   key={it.href}
                   prefetch
                   href={it.href}
-                  className={`transition shrink-0 ${
+                  className={`transition shrink-0 py-1 ${
                     active
                       ? 'text-[#a3e635] font-bold'
                       : 'text-[#888892] hover:text-stone-100'
@@ -62,9 +64,9 @@ export async function Nav() {
           <nav className="flex items-center gap-3 text-sm">
             <Link
               href="/login"
-              className="px-3.5 py-1.5 rounded bg-[#a3e635] text-[#0a0a0a] text-[11px] font-bold uppercase tracking-[0.15em] hover:bg-lime-300 transition"
+              className="px-4 py-1.5 rounded bg-[#a3e635] text-[#0a0a0a] text-[13px] font-bold hover:bg-lime-300 transition"
             >
-              Enter
+              시작
             </Link>
           </nav>
         )}

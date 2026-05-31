@@ -15,11 +15,11 @@ type Props = {
 
 const VARIANT_CLS: Record<Variant, string> = {
   primary:
-    'px-6 py-2.5 bg-[#a3e635] text-[#0a0a0a] rounded font-bold uppercase tracking-[0.2em] text-[11px] hover:bg-lime-300',
+    'px-5 py-3 bg-[#a3e635] text-[#0a0a0a] rounded-lg font-bold text-[14px] hover:bg-lime-300',
   ghost:
-    'px-4 py-2 bg-[#14141a] border border-[#a3e635]/40 text-[#a3e635] rounded font-bold uppercase tracking-[0.2em] text-[11px] hover:bg-[#a3e635] hover:text-[#0a0a0a]',
+    'px-4 py-2.5 bg-[#14141a] border border-[#a3e635]/40 text-[#a3e635] rounded-lg font-bold text-[14px] hover:bg-[#a3e635] hover:text-[#0a0a0a]',
   small:
-    'px-3 py-1.5 bg-[#a3e635] text-[#0a0a0a] rounded font-bold uppercase tracking-[0.2em] text-[10px] hover:bg-lime-300',
+    'px-3 py-2 bg-[#a3e635] text-[#0a0a0a] rounded font-bold text-[12px] hover:bg-lime-300',
 };
 
 export function SubmitButton({
@@ -74,7 +74,7 @@ export function SubmitButton({
     >
       {btn}
       <span
-        className={`text-[11px] uppercase tracking-[0.2em] text-[#a3e635] transition-opacity duration-200 ${
+        className={`text-[13px] text-[#a3e635] transition-opacity duration-200 ${
           savedAt ? 'opacity-100' : 'opacity-0'
         }`}
         aria-live="polite"
