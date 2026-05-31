@@ -41,11 +41,17 @@ html, body {
 
 body {
   font-family: var(--font-geist-sans), system-ui, -apple-system, "Apple SD Gothic Neo", "Pretendard", sans-serif;
-  /* 기본 본문 글씨를 살짝 키움 (모바일 가독성) */
-  font-size: 15px;
+  /* 모바일 가독성 — 16px 기본 */
+  font-size: 16px;
   line-height: 1.55;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  /* iOS Safari URL bar 변동 대응 */
+  min-height: 100dvh;
+}
+
+html {
+  min-height: 100dvh;
 }
 
 ::selection {

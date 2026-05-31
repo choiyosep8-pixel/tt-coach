@@ -31,6 +31,7 @@ export async function Nav() {
   return (
     <header
       className="border-b border-[#2a2a30] bg-[#0a0a0a] sticky top-0 z-10 safe-top"
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}
     >
       <div className="max-w-3xl mx-auto px-4 pt-3 pb-3 flex items-center justify-between gap-2 min-w-0">
         <Link href="/" prefetch className="flex items-center gap-2 group shrink-0">
