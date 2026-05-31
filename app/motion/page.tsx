@@ -83,7 +83,7 @@ export default async function MotionPage({
           })}
           {(analyses ?? []).length === 0 && (
             <li className="text-[14px] text-[#5a5a62] py-6 text-center bg-[#14141a] border border-[#2a2a30] rounded-lg">
-              아직 분석이 없어요. 아래에서 첫 영상을 박아보세요.
+              아직 분석이 없어요. 아래에서 첫 영상을 분석해보세요.
             </li>
           )}
         </ul>
@@ -93,7 +93,7 @@ export default async function MotionPage({
       <section>
         <details className="group" open={(analyses ?? []).length === 0}>
           <summary className="cursor-pointer flex items-center justify-between bg-[#14141a] border border-[#a3e635]/40 rounded-lg px-4 py-3.5 select-none hover:border-[#a3e635] transition">
-            <span className="text-[15px] font-bold text-[#a3e635]">+ 새 영상 박기</span>
+            <span className="text-[15px] font-bold text-[#a3e635]">+ 새 영상 분석</span>
             <span className="text-[#5a5a62] group-open:rotate-180 transition-transform">▾</span>
           </summary>
           <div className="mt-3">

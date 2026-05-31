@@ -16,7 +16,7 @@ export function CoachBrief({ ym, goal, profile, collapsible = false }: Props) {
       {isEmpty ? (
         <p className="text-[12px] text-[#888892]">
           아직 비어있어요.{' '}
-          <a href="/" className="text-[#a3e635] underline">홈에서 박기</a>
+          <a href="/" className="text-[#a3e635] underline">홈에서 작성</a>
         </p>
       ) : (
         <>

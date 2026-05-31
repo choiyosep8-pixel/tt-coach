@@ -95,7 +95,7 @@ export default async function MotionDetailPage({
           <CopyCommand command={command} />
           <p className="text-[11px] text-[#888892] mt-3 leading-relaxed">
             클로드 코드 채팅에 위 명령을 붙여넣으면 두 유튜브 영상을 받아와 키프레임을 비교하고
-            결과를 여기로 박아드립니다.
+            결과를 여기로 보내드립니다.
           </p>
         </section>
       )}
