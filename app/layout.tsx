@@ -43,7 +43,10 @@ export default function RootLayout({
       lang="ko"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex flex-col bg-[#0a0a0a] text-stone-100" style={{ minHeight: '100dvh' }}>
+      <body
+        className="flex flex-col bg-[#0a0a0a] text-stone-100 min-h-screen"
+        style={{ minHeight: '100dvh' }}
+      >
         <SwipeNav />
         <Nav />
         <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-5">{children}</main>
