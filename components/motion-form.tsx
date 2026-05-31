@@ -139,7 +139,7 @@ export function MotionForm({ userId }: { userId: string }) {
             <VideoUploader userId={userId} />
           )}
 
-          <SubjectFieldset prefix="my" variant="mine" required />
+          <SubjectFieldset prefix="my" variant="mine" />
         </fieldset>
       </div>
 

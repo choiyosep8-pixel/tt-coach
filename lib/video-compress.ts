@@ -52,13 +52,14 @@ export async function compressVideo(
   try {
     await ff.exec([
       '-i', inputName,
-      '-vf', 'scale=720:-2',           // 720p 폭, 비율 유지 (짝수)
+      '-vf', 'scale=540:-2,fps=24',    // 540p + 24fps (분석엔 충분, 변환 ~2배 빠름)
       '-c:v', 'libx264',
-      '-preset', 'ultrafast',          // 속도 우선
-      '-crf', '28',                    // 화질·용량 균형 (분석엔 충분)
-      '-pix_fmt', 'yuv420p',           // 호환성
+      '-preset', 'ultrafast',
+      '-tune', 'fastdecode',
+      '-crf', '30',                    // 약간 더 압축 (화질엔 거의 차이 없음)
+      '-pix_fmt', 'yuv420p',
       '-movflags', '+faststart',
-      '-an',                           // 오디오 제거 (분석 불필요)
+      '-an',
       '-y',
       outputName,
     ]);

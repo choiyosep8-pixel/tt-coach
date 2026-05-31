@@ -43,8 +43,8 @@ export function SubjectFieldset({
 
   const subjectPlaceholder =
     variant === 'mine'
-      ? '예: 파란 상하의, 무릎 보호대 X'
-      : '예: 검은 티 (단독이면 비움)';
+      ? '헷갈릴 때만 적기 — 예: 파란 상하의'
+      : '헷갈릴 때만 — 예: 검은 티 (단독이면 비움)';
 
   return (
     <div className="space-y-2.5 min-w-0">
